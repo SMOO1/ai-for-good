@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import AudioButton from './AudioButton'
-import { mockDrawingRecognition } from '@/lib/mockDrawingRecognition'
+import { evalDrawing } from '@/lib/drawingRecognition'
 
 interface DrawingCanvasProps {
   word: string
@@ -23,6 +23,7 @@ export default function DrawingCanvas({ word, referenceEmoji, onComplete }: Draw
   const [brushSize, setBrushSize] = useState(6)
   const [isProcessing, setIsProcessing] = useState(false)
   const [result, setResult] = useState<'passed' | 'failed' | null>(null)
+  const [feedback, setFeedback] = useState('')
   const lastPos = useRef<{ x: number; y: number } | null>(null)
 
   // Setup canvas with devicePixelRatio
@@ -111,10 +112,15 @@ export default function DrawingCanvas({ word, referenceEmoji, onComplete }: Draw
   }
 
   const handleDone = async () => {
+    if (!hasStrokes) return
+    const canvas = canvasRef.current
+    if (!canvas) return
     setIsProcessing(true)
-    const passed = await mockDrawingRecognition(hasStrokes)
+    const dataUrl = canvas.toDataURL('image/png')
+    const { correct, feedback: fb } = await evalDrawing(dataUrl, word)
+    setFeedback(fb)
     setIsProcessing(false)
-    setResult(passed ? 'passed' : 'failed')
+    setResult(correct ? 'passed' : 'failed')
   }
 
   return (
@@ -172,11 +178,13 @@ export default function DrawingCanvas({ word, referenceEmoji, onComplete }: Draw
                 <>
                   <span className="text-6xl">🎨</span>
                   <p className="text-white text-2xl font-bold">Great drawing!</p>
+                  {feedback && <p className="text-white/80 text-sm text-center px-4">{feedback}</p>}
                 </>
               ) : (
                 <>
                   <span className="text-8xl">{referenceEmoji}</span>
-                  <p className="text-white text-2xl font-bold text-center px-4">Let&apos;s learn this word 📖</p>
+                  <p className="text-white text-2xl font-bold text-center px-4">Let&apos;s learn this! 📖</p>
+                  {feedback && <p className="text-white/80 text-sm text-center px-4">{feedback}</p>}
                 </>
               )}
               <button

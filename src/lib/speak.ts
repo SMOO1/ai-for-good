@@ -40,19 +40,43 @@ export function speak(text: string, rate = 0.85) {
   window.speechSynthesis.speak(u)
 }
 
-// Rohingya is spoken via romanized transliteration using TTS at a slower rate
-// so the phonetic approximation is more intelligible
+// Voices that read romanized Rohingya more naturally (South Asian phonetics)
+const ROHINGYA_PREFERRED_VOICES = [
+  'Woodrow',                              // user-recommended
+  'Microsoft Ravi - English (India)',
+  'Microsoft Heera - English (India)',
+  'Google हिन्दी',
+  'Lekha',                                // macOS Indian English
+  'Rishi',                                // macOS Indian English
+]
+
+function pickRohingyaVoice(): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis.getVoices()
+  if (!voices.length) return null
+
+  for (const name of ROHINGYA_PREFERRED_VOICES) {
+    const match = voices.find(v => v.name.toLowerCase().includes(name.toLowerCase()))
+    if (match) return match
+  }
+
+  // Log available voices in dev so user can find the right name
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[speak] available voices:', voices.map(v => v.name))
+  }
+
+  return pickVoice()
+}
+
 export function speakRohingya(text: string) {
   if (typeof window === 'undefined') return
   window.speechSynthesis.cancel()
 
   const u = new SpeechSynthesisUtterance(text)
-  u.rate = 1.0
+  u.rate = 0.9
   u.pitch = 1.0
-  // No specific Rohingya voice — romanized text is read phonetically
   u.lang = 'en-US'
 
-  const voice = pickVoice()
+  const voice = pickRohingyaVoice()
   if (voice) u.voice = voice
 
   window.speechSynthesis.speak(u)

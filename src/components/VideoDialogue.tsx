@@ -64,6 +64,7 @@ export default function VideoDialogue({ scenario, onComplete }: VideoDialoguePro
             autoPlay
             playsInline
             onEnded={onPromptVideoEnd}
+            onError={onPromptVideoEnd}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -82,6 +83,7 @@ export default function VideoDialogue({ scenario, onComplete }: VideoDialoguePro
             autoPlay
             playsInline
             onEnded={onAnswerVideoEnd}
+            onError={onAnswerVideoEnd}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

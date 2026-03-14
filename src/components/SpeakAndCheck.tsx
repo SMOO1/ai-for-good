@@ -25,10 +25,12 @@ export default function SpeakAndCheck({
 }: SpeakAndCheckProps) {
   const [result, setResult] = useState<'correct' | 'wrong' | null>(null)
   const [transcript, setTranscript] = useState('')
+  const [feedback, setFeedback] = useState('')
   const [noInput, setNoInput] = useState(false)
 
-  const handleResult = useCallback(({ correct, transcript: t }: { correct: boolean; transcript: string }) => {
+  const handleResult = useCallback(({ correct, transcript: t, feedback: f }: { correct: boolean; transcript: string; feedback?: string }) => {
     setTranscript(t)
+    setFeedback(f ?? '')
     setResult(correct ? 'correct' : 'wrong')
     setNoInput(false)
     if (correct) onPass()
@@ -47,6 +49,7 @@ export default function SpeakAndCheck({
   const retry = () => {
     setResult(null)
     setTranscript('')
+    setFeedback('')
     setNoInput(false)
   }
 
@@ -78,7 +81,9 @@ export default function SpeakAndCheck({
               )}
             </div>
             <p className="text-xs text-gray-400 text-center">
-              {interimTranscript
+              {recognitionState === 'evaluating'
+                ? 'Checking...'
+                : interimTranscript
                 ? `"${interimTranscript}"`
                 : noInput
                 ? "Didn't catch that — try again"
@@ -112,18 +117,19 @@ export default function SpeakAndCheck({
             className="w-full bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 flex flex-col gap-2"
           >
             <div className="flex items-center gap-2">
-              <span className="text-2xl">🔁</span>
+              <span className="text-2xl">📖</span>
               <div className="flex-1">
-                <p className="text-amber-700 font-bold text-sm">Try again</p>
+                <p className="text-amber-700 font-bold text-sm">{feedback || "Let's learn this together!"}</p>
                 {transcript && <p className="text-amber-600 text-xs italic">You said: "{transcript}"</p>}
               </div>
               <AudioButton text={targetText} size="sm" />
             </div>
+            <p className="text-amber-800 text-center font-semibold text-sm">"{targetText}"</p>
             <button
               onClick={retry}
               className="bg-amber-500 text-white rounded-xl py-2 px-5 font-bold text-sm w-full"
             >
-              Try Again 🎤
+              Try again 🎤
             </button>
           </motion.div>
         )}

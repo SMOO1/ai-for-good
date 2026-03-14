@@ -19,5 +19,10 @@ export const VOCABULARY: VocabItem[] = [
   { id: 'bag',     label: 'bag',     icon: '👜', audioText: 'bag',     referenceEmoji: '👜', topic: 'grocery' },
   { id: 'work',    label: 'work',    icon: '💼', audioText: 'work',    referenceEmoji: '💼', topic: 'work' },
   { id: 'teacher', label: 'teacher', icon: '👩‍🏫', audioText: 'teacher', referenceEmoji: '👩‍🏫', topic: 'school' },
-  { id: 'help',    label: 'help',    icon: '🤝', audioText: 'help',    referenceEmoji: '🤝', topic: 'doctor' },
+  { id: 'help',    label: 'help',    icon: '🤝', audioText: 'help',    referenceEmoji: '🤝',  topic: 'doctor' },
+  { id: 'money',   label: 'money',   icon: '💰', audioText: 'money',   referenceEmoji: '💰',  topic: 'money'  },
+  { id: 'house',   label: 'house',   icon: '🏠', audioText: 'house',   referenceEmoji: '🏠',  topic: 'house'  },
+  { id: 'police',  label: 'police',  icon: '👮', audioText: 'police',  referenceEmoji: '👮',  topic: 'police' },
+  { id: 'name',    label: 'name',    icon: '🪪', audioText: 'name',    referenceEmoji: '🪪',  topic: 'name'   },
+  { id: 'sick',    label: 'sick',    icon: '🤒', audioText: 'sick',    referenceEmoji: '🤒',  topic: 'sick'   },
 ]
