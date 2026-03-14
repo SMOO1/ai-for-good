@@ -1,48 +1,35 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import { motion } from 'framer-motion'
+import type { RecognitionState } from '@/lib/useSpeechRecognition'
 
 interface MicrophoneButtonProps {
-  sentence: string
-  onSpeak?: () => void
+  state: RecognitionState
+  onClick: () => void
+  disabled?: boolean
 }
 
-function speak(text: string) {
-  if (typeof window === 'undefined') return
-  window.speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.rate = 0.85
-  u.lang = 'en-US'
-  window.speechSynthesis.speak(u)
-}
-
-export default function MicrophoneButton({ sentence, onSpeak }: MicrophoneButtonProps) {
-  const [speaking, setSpeaking] = useState(false)
-
-  const handlePress = () => {
-    speak(sentence)
-    setSpeaking(true)
-    onSpeak?.()
-    setTimeout(() => setSpeaking(false), 2000)
-  }
+export default function MicrophoneButton({ state, onClick, disabled }: MicrophoneButtonProps) {
+  const isListening = state === 'listening'
 
   return (
     <div className="flex flex-col items-center gap-2">
       <motion.button
         whileTap={{ scale: 0.92 }}
-        onClick={handlePress}
-        className={`w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-lg transition-all ${
-          speaking
+        onClick={onClick}
+        disabled={disabled || isListening}
+        className={`w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+          isListening
             ? 'bg-red-500 ring-4 ring-red-300 animate-pulse'
             : 'bg-primary'
         }`}
-        aria-label="Tap to speak"
+        aria-label={isListening ? 'Listening…' : 'Tap to speak'}
       >
         🎤
       </motion.button>
       <p className="text-sm font-semibold text-gray-600">
-        {speaking ? 'Speaking...' : 'Tap to speak'}
+        {isListening ? 'Listening…' : 'Tap to speak'}
       </p>
     </div>
   )

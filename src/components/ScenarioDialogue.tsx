@@ -1,9 +1,11 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import FeedbackMessage from './FeedbackMessage'
 import MicrophoneButton from './MicrophoneButton'
+import AudioButton from './AudioButton'
+import { useSpeechRecognition } from '@/lib/useSpeechRecognition'
 import type { ScenarioModule } from '@/data/scenarios'
 
 interface ScenarioDialogueProps {
@@ -20,8 +22,12 @@ function speak(text: string, rate = 0.85) {
   window.speechSynthesis.speak(u)
 }
 
+type Turn = 'prompt' | 'answer' | 'wrong' | 'feedback'
+
 export default function ScenarioDialogue({ scenario, onComplete }: ScenarioDialogueProps) {
-  const [turn, setTurn] = useState<'prompt' | 'answer' | 'feedback'>('prompt')
+  const [turn, setTurn] = useState<Turn>('prompt')
+  const [transcript, setTranscript] = useState('')
+  const [noInputMsg, setNoInputMsg] = useState(false)
   const [practiceCount, setPracticeCount] = useState(0)
 
   useEffect(() => {
@@ -31,15 +37,35 @@ export default function ScenarioDialogue({ scenario, onComplete }: ScenarioDialo
     }
   }, [turn, scenario.dialoguePrompt])
 
-  const handleAnswer = () => {
-    speak(scenario.dialogueExpected)
-    setTurn('feedback')
-  }
+  const handleResult = useCallback(({ correct, transcript: t }: { correct: boolean; transcript: string }) => {
+    setTranscript(t)
+    setNoInputMsg(false)
+    setTurn(correct ? 'feedback' : 'wrong')
+  }, [])
+
+  const handleNoInput = useCallback(() => {
+    setNoInputMsg(true)
+  }, [])
+
+  const { recognitionState, interimTranscript, start, isSupported } = useSpeechRecognition({
+    targetText: scenario.dialogueExpected,
+    focusWord: scenario.word,
+    onResult: handleResult,
+    onNoInput: handleNoInput,
+  })
 
   const handlePracticeAgain = () => {
     setPracticeCount(c => c + 1)
+    setTranscript('')
+    setNoInputMsg(false)
     setTurn('prompt')
     setTimeout(() => setTurn('answer'), 800)
+  }
+
+  const retryFromWrong = () => {
+    setTranscript('')
+    setNoInputMsg(false)
+    setTurn('answer')
   }
 
   return (
@@ -108,13 +134,64 @@ export default function ScenarioDialogue({ scenario, onComplete }: ScenarioDialo
               exit={{ opacity: 0 }}
               className="flex flex-col items-end gap-3"
             >
-              {/* Sentence card to tap */}
+              {/* Target sentence hint */}
               <div className="bg-primary-light rounded-2xl rounded-br-sm p-4 max-w-[80%] border-2 border-primary">
                 <p className="text-primary font-bold text-lg">{scenario.dialogueExpected}</p>
               </div>
-              <div className="flex items-center gap-3">
-                <p className="text-gray-400 text-sm">Tap 🎤 to say it</p>
-                <MicrophoneButton sentence={scenario.dialogueExpected} onSpeak={handleAnswer} />
+
+              {isSupported ? (
+                <div className="flex flex-col items-center gap-2 w-full">
+                  <MicrophoneButton state={recognitionState} onClick={start} />
+                  {interimTranscript ? (
+                    <p className="text-gray-400 text-sm italic">"{interimTranscript}"</p>
+                  ) : noInputMsg ? (
+                    <p className="text-amber-600 text-sm font-medium text-center">
+                      We didn't catch that — tap 🎤 and speak clearly
+                    </p>
+                  ) : (
+                    <p className="text-gray-400 text-sm">Tap 🎤 to say it</p>
+                  )}
+                </div>
+              ) : (
+                /* Fallback: no speech recognition support */
+                <div className="flex items-center gap-3">
+                  <p className="text-gray-400 text-sm">Tap 🎤 to say it</p>
+                  <MicrophoneButton
+                    state="idle"
+                    onClick={() => { speak(scenario.dialogueExpected); setTurn('feedback') }}
+                  />
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {turn === 'wrong' && (
+            <motion.div
+              key="wrong"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col gap-3"
+            >
+              {/* User attempt bubble */}
+              <div className="flex justify-end">
+                <div className="bg-amber-100 border border-amber-300 rounded-2xl rounded-br-sm p-3 max-w-[80%]">
+                  <p className="text-amber-800 font-medium">{transcript || '…'}</p>
+                </div>
+              </div>
+              {/* Error feedback + pronunciation hint */}
+              <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col gap-2">
+                <p className="text-amber-700 font-bold">🔁 Not quite — let's try again</p>
+                <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-2 border border-amber-200">
+                  <p className="text-amber-800 font-semibold flex-1">{scenario.dialogueExpected}</p>
+                  <AudioButton text={scenario.dialogueExpected} size="sm" />
+                </div>
+                <button
+                  onClick={retryFromWrong}
+                  className="bg-amber-500 text-white rounded-xl py-2 px-6 font-bold mt-1"
+                >
+                  Try Again 🎤
+                </button>
               </div>
             </motion.div>
           )}
@@ -129,10 +206,9 @@ export default function ScenarioDialogue({ scenario, onComplete }: ScenarioDialo
               {/* User bubble */}
               <div className="flex justify-end">
                 <div className="bg-primary rounded-2xl rounded-br-sm p-4 max-w-[80%]">
-                  <p className="text-white font-bold text-lg">{scenario.dialogueExpected}</p>
+                  <p className="text-white font-bold text-lg">{transcript || scenario.dialogueExpected}</p>
                 </div>
               </div>
-              {/* Feedback */}
               <FeedbackMessage message={scenario.dialogueFeedback} type="success" />
             </motion.div>
           )}
