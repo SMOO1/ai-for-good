@@ -2,20 +2,12 @@
 
 import React, { useState } from 'react'
 import clsx from 'clsx'
+import { speak } from '@/lib/speak'
 
 interface AudioButtonProps {
   text: string
   size?: 'sm' | 'lg'
   label?: string
-}
-
-function speak(text: string, rate: number = 0.85) {
-  if (typeof window === 'undefined') return
-  window.speechSynthesis.cancel()
-  const utterance = new SpeechSynthesisUtterance(text)
-  utterance.rate = rate
-  utterance.lang = 'en-US'
-  window.speechSynthesis.speak(utterance)
 }
 
 export default function AudioButton({ text, size = 'sm', label }: AudioButtonProps) {

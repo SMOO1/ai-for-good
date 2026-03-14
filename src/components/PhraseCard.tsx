@@ -3,20 +3,12 @@
 import React, { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import AudioButton from './AudioButton'
+import { speak } from '@/lib/speak'
 import type { ScenarioModule } from '@/data/scenarios'
 
 interface PhraseCardProps {
   scenario: ScenarioModule
   onNext: () => void
-}
-
-function speak(text: string, rate = 0.85) {
-  if (typeof window === 'undefined') return
-  window.speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.rate = rate
-  u.lang = 'en-US'
-  window.speechSynthesis.speak(u)
 }
 
 export default function PhraseCard({ scenario, onNext }: PhraseCardProps) {

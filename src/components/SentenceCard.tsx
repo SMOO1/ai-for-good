@@ -5,20 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import AudioButton from './AudioButton'
 import MicrophoneButton from './MicrophoneButton'
 import { useSpeechRecognition } from '@/lib/useSpeechRecognition'
+import { speak } from '@/lib/speak'
 import type { ScenarioModule } from '@/data/scenarios'
 
 interface SentenceCardProps {
   scenario: ScenarioModule
   onNext: () => void
-}
-
-function speak(text: string, rate = 0.85) {
-  if (typeof window === 'undefined') return
-  window.speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.rate = rate
-  u.lang = 'en-US'
-  window.speechSynthesis.speak(u)
 }
 
 type ResultState = 'correct' | 'wrong' | null

@@ -6,20 +6,12 @@ import FeedbackMessage from './FeedbackMessage'
 import MicrophoneButton from './MicrophoneButton'
 import AudioButton from './AudioButton'
 import { useSpeechRecognition } from '@/lib/useSpeechRecognition'
+import { speak } from '@/lib/speak'
 import type { ScenarioModule } from '@/data/scenarios'
 
 interface ScenarioDialogueProps {
   scenario: ScenarioModule
   onComplete: () => void
-}
-
-function speak(text: string, rate = 0.85) {
-  if (typeof window === 'undefined') return
-  window.speechSynthesis.cancel()
-  const u = new SpeechSynthesisUtterance(text)
-  u.rate = rate
-  u.lang = 'en-US'
-  window.speechSynthesis.speak(u)
 }
 
 type Turn = 'prompt' | 'answer' | 'wrong' | 'feedback'
