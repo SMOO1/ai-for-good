@@ -140,6 +140,14 @@ export default function VideoDialogue({ scenario, onComplete }: VideoDialoguePro
             <p className="text-white/40 text-xs">
               {recognitionState === 'listening' ? 'Listening… tap Done when finished' : 'Tap 🎤 to speak'}
             </p>
+
+            {/* Demo skip button */}
+            <button
+              onClick={() => setPhase('answer-video')}
+              className="text-white/30 text-xs underline"
+            >
+              skip →
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
