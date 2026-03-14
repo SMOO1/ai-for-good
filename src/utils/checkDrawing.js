@@ -45,6 +45,9 @@ Answer with YES or NO on the first line, then one short encouraging sentence (ma
   })
 
   if (!res.ok) {
+    if (res.status === 429) {
+      throw new Error('Rate limit reached — wait a moment and try again')
+    }
     const err = await res.json().catch(() => ({}))
     throw new Error(err?.error?.message ?? `API error ${res.status}`)
   }

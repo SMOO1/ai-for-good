@@ -77,7 +77,6 @@ export default function App() {
         {activeTab === 'draw' && (
           <DrawTab
             words={WORDS}
-            currentIndex={currentIndex}
             onSaveDrawing={handleSaveDrawing}
           />
         )}

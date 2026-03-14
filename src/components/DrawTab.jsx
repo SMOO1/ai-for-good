@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useDrawing } from '../hooks/useDrawing'
 import { checkDrawing } from '../utils/checkDrawing'
+import { CATEGORIES } from '../data/words'
 
 const COLORS = ['#000000', '#e53e3e', '#1D9E75', '#3182ce', '#dd6b20', '#d53f8c']
 
@@ -15,26 +16,57 @@ const PHASE = {
 // Hint levels: 0 = word only, 1 = silhouette emoji, 2 = colour emoji
 const HINT = { NONE: 0, SILHOUETTE: 1, COLOR: 2 }
 
-export default function DrawTab({ words, currentIndex, onSaveDrawing }) {
+export default function DrawTab({ words, onSaveDrawing }) {
   const {
     canvasRef, color, setColor, brushSize, setBrushSize,
     isEraser, setIsEraser, hasStrokes,
     initCanvas, startDraw, draw, endDraw, clearCanvas, getDataURL,
   } = useDrawing()
 
+  const [activeCat, setActiveCat] = useState('all')
+  const [poolIndex, setPoolIndex] = useState(0)
   const [phase,   setPhase]   = useState(PHASE.DRAW)
   const [aiMsg,   setAiMsg]   = useState('')
   const [savedMsg, setSavedMsg] = useState(false)
   const [hint,    setHint]    = useState(HINT.NONE)
 
-  const word = words[Math.min(currentIndex, words.length - 1)]
+  const pool = useMemo(
+    () => activeCat === 'all' ? words : words.filter(w => w.cat === activeCat),
+    [words, activeCat]
+  )
 
-  // Re-initialise canvas and reset hint when we move to a new word or restart
+  const word = pool[Math.min(poolIndex, pool.length - 1)]
+
+  function handleCategoryChange(cat) {
+    setActiveCat(cat)
+    setPoolIndex(0)
+    clearCanvas()
+    setPhase(PHASE.DRAW)
+    setAiMsg('')
+    setHint(HINT.NONE)
+  }
+
+  function goNext() {
+    setPoolIndex(i => (i + 1) % pool.length)
+    clearCanvas()
+    setPhase(PHASE.DRAW)
+    setAiMsg('')
+    setHint(HINT.NONE)
+  }
+
+  function goPrev() {
+    setPoolIndex(i => (i - 1 + pool.length) % pool.length)
+    clearCanvas()
+    setPhase(PHASE.DRAW)
+    setAiMsg('')
+    setHint(HINT.NONE)
+  }
+
+  // Re-initialise canvas when word changes
   useEffect(() => {
     const id = setTimeout(initCanvas, 50)
-    setHint(HINT.NONE)
     return () => clearTimeout(id)
-  }, [currentIndex])
+  }, [poolIndex, activeCat])
 
   function handleCheck() {
     const dataURL = getDataURL()
@@ -58,14 +90,7 @@ export default function DrawTab({ words, currentIndex, onSaveDrawing }) {
       setSavedMsg(true)
       setTimeout(() => setSavedMsg(false), 2000)
     }
-    resetToNext()
-  }
-
-  function resetToNext() {
-    clearCanvas()
-    setPhase(PHASE.DRAW)
-    setAiMsg('')
-    setHint(HINT.NONE)
+    goNext()
   }
 
   const isDrawing = phase === PHASE.DRAW
@@ -77,6 +102,19 @@ export default function DrawTab({ words, currentIndex, onSaveDrawing }) {
 
   return (
     <div className="draw-tab">
+      {/* Category filter */}
+      <div className="cat-filter">
+        {['all', ...CATEGORIES].map(cat => (
+          <button
+            key={cat}
+            className={`cat-pill${activeCat === cat ? ' cat-pill--active' : ''}`}
+            onClick={() => handleCategoryChange(cat)}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
       {/* Word prompt — word + progressive hint */}
       <div className={`draw-word-prompt ${!isDrawing ? 'draw-word-prompt--hidden' : ''}`}>
         <div className="draw-word-prompt__label">Draw this word:</div>
@@ -112,7 +150,7 @@ export default function DrawTab({ words, currentIndex, onSaveDrawing }) {
           <div className="draw-result__msg">{aiMsg}</div>
           <div className="draw-result__actions">
             <button className="btn btn--primary" onClick={handleSave}>💾 Save to Gallery</button>
-            <button className="btn btn--ghost" onClick={resetToNext}>Skip →</button>
+            <button className="btn btn--ghost" onClick={goNext}>Skip →</button>
           </div>
         </div>
       )}
@@ -124,7 +162,7 @@ export default function DrawTab({ words, currentIndex, onSaveDrawing }) {
             <button className="btn btn--primary" onClick={() => { clearCanvas(); setPhase(PHASE.DRAW) }}>
               Try again ↩
             </button>
-            <button className="btn btn--ghost" onClick={resetToNext}>Next word →</button>
+            <button className="btn btn--ghost" onClick={goNext}>Next word →</button>
           </div>
         </div>
       )}
@@ -184,13 +222,15 @@ export default function DrawTab({ words, currentIndex, onSaveDrawing }) {
           </div>
 
           <div className="draw-actions">
+            <button className="btn btn--ghost" onClick={goPrev}>← Prev</button>
             <button className="btn btn--ghost" onClick={clearCanvas}>🗑️ Clear</button>
+            <button className="btn btn--ghost" onClick={goNext}>Next →</button>
             <button
               className="btn btn--primary"
               onClick={handleCheck}
               disabled={!hasStrokes}
             >
-              ✓ Check drawing
+              ✓ Check
             </button>
           </div>
         </>
