@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from 'react'
 import { CATEGORIES } from '../data/words'
 import { useTTS } from '../hooks/useTTS'
+import { useLang } from '../LangContext'
+import { CAT_KEYS } from '../i18n'
 
 function pickOptions(correct, pool) {
   // 3 wrong English answers, shuffled with the correct one
@@ -17,10 +19,11 @@ function pickQuestion(pool) {
 
 export default function QuizTab({ words, score, onScoreChange }) {
   const [activeCat, setActiveCat]         = useState('all')
-  const [answered,  setAnswered]          = useState(null)    // null | 'correct' | 'wrong'
+  const [answered,  setAnswered]          = useState(null)
   const [chosen,    setChosen]            = useState(null)
   const [showCelebration, setShowCelebration] = useState(false)
   const { speak } = useTTS()
+  const { t } = useLang()
 
   const pool = useMemo(
     () => activeCat === 'all' ? words : words.filter(w => w.cat === activeCat),
@@ -81,7 +84,7 @@ export default function QuizTab({ words, score, onScoreChange }) {
             className={`cat-pill${activeCat === cat ? ' cat-pill--active' : ''}`}
             onClick={() => handleCategoryChange(cat)}
           >
-            {cat}
+            {t[CAT_KEYS[cat]]}
           </button>
         ))}
       </div>
@@ -90,7 +93,7 @@ export default function QuizTab({ words, score, onScoreChange }) {
       <div className="quiz-card">
         <div className="quiz-card__arabic">{question.arabic}</div>
         <div className="quiz-card__roh">{question.roh}</div>
-        <div className="quiz-card__prompt">What does this mean in English?</div>
+        <div className="quiz-card__prompt">{t.quizPrompt}</div>
       </div>
 
       {/* Options — English words */}
@@ -122,7 +125,7 @@ export default function QuizTab({ words, score, onScoreChange }) {
             ? `✓ "${question.roh}" means ${question.en}!`
             : `✗ It means "${question.en}" (${question.roh})`}
           <button className="btn btn--primary btn--sm" onClick={nextQuestion}>
-            Next →
+            {t.next}
           </button>
         </div>
       )}

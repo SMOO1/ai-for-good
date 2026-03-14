@@ -1,11 +1,15 @@
-const TABS = [
-  { id: 'learn',   label: 'Learn',   icon: '📖' },
-  { id: 'draw',    label: 'Draw',    icon: '✏️' },
-  { id: 'gallery', label: 'Gallery', icon: '🖼️' },
-  { id: 'quiz',    label: 'Quiz',    icon: '⭐' },
-]
+import { useLang } from '../LangContext'
 
 export default function NavTabs({ activeTab, onTabChange, drawingCount }) {
+  const { t } = useLang()
+
+  const TABS = [
+    { id: 'learn',   label: t.tabLearn,   icon: '📖' },
+    { id: 'draw',    label: t.tabDraw,    icon: '✏️' },
+    { id: 'gallery', label: t.tabGallery, icon: '🖼️' },
+    { id: 'quiz',    label: t.tabQuiz,    icon: '⭐' },
+  ]
+
   return (
     <nav className="nav-tabs" role="tablist">
       {TABS.map(tab => (

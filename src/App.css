@@ -101,6 +101,20 @@ button { font-family: inherit; cursor: pointer; }
   flex: 1;
 }
 .app-header__icon { font-size: 22px; }
+.lang-toggle {
+  margin-left: auto;
+  background: var(--green-light);
+  color: var(--green-dark);
+  border: 1.5px solid var(--green);
+  border-radius: var(--radius);
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.lang-toggle:hover { background: var(--green); color: #fff; }
 
 /* ===== CONTENT AREA ===== */
 .app-content {

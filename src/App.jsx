@@ -4,6 +4,7 @@ import LearnTab from './components/LearnTab'
 import DrawTab from './components/DrawTab'
 import GalleryTab from './components/GalleryTab'
 import QuizTab from './components/QuizTab'
+import { LangProvider, useLang } from './LangContext'
 import { WORDS } from './data/words'
 import './App.css'
 
@@ -21,13 +22,13 @@ function save(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* quota */ }
 }
 
-export default function App() {
-  const [activeTab,     setActiveTab]     = useState('learn')
-  const [currentIndex,  setCurrentIndex]  = useState(() => load(LS.WORD_INDEX, 0))
-  const [drawings,      setDrawings]      = useState(() => load(LS.GALLERY, []))
-  const [quizScore,     setQuizScore]     = useState(() => load(LS.QUIZ_SCORE, { correct: 0, wrong: 0 }))
+function AppInner() {
+  const { t, toggle } = useLang()
+  const [activeTab,    setActiveTab]    = useState('learn')
+  const [currentIndex, setCurrentIndex] = useState(() => load(LS.WORD_INDEX, 0))
+  const [drawings,     setDrawings]     = useState(() => load(LS.GALLERY, []))
+  const [quizScore,    setQuizScore]    = useState(() => load(LS.QUIZ_SCORE, { correct: 0, wrong: 0 }))
 
-  // Persist word index
   useEffect(() => { save(LS.WORD_INDEX, currentIndex) }, [currentIndex])
 
   function handleSaveDrawing(item) {
@@ -47,13 +48,9 @@ export default function App() {
     save(LS.QUIZ_SCORE, next)
   }
 
-  function goToDraw() {
-    setActiveTab('draw')
-  }
-
   return (
     <div className="app">
-      {/* Splash screen — CSS animation removes it after 1.8s */}
+      {/* Splash screen */}
       <div className="splash" aria-hidden="true">
         <div className="splash__icon">📚</div>
         <div className="splash__title">Rohingya Words</div>
@@ -63,6 +60,7 @@ export default function App() {
       <header className="app-header">
         <span className="app-header__icon">🌟</span>
         <h1>Rohingya Words</h1>
+        <button className="lang-toggle" onClick={toggle}>{t.langToggle}</button>
       </header>
 
       <main className="app-content">
@@ -71,7 +69,7 @@ export default function App() {
             words={WORDS}
             currentIndex={currentIndex}
             setCurrentIndex={setCurrentIndex}
-            onGoToDraw={goToDraw}
+            onGoToDraw={() => setActiveTab('draw')}
           />
         )}
         {activeTab === 'draw' && (
@@ -101,5 +99,13 @@ export default function App() {
         drawingCount={drawings.length}
       />
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <LangProvider>
+      <AppInner />
+    </LangProvider>
   )
 }

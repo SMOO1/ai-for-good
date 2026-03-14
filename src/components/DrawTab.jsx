@@ -2,18 +2,18 @@ import { useEffect, useState, useMemo } from 'react'
 import { useDrawing } from '../hooks/useDrawing'
 import { checkDrawing } from '../utils/checkDrawing'
 import { CATEGORIES } from '../data/words'
+import { useLang } from '../LangContext'
+import { CAT_KEYS } from '../i18n'
 
 const COLORS = ['#000000', '#e53e3e', '#1D9E75', '#3182ce', '#dd6b20', '#d53f8c']
 
-// Draw phase states
 const PHASE = {
-  DRAW:    'draw',    // blank canvas, word shown as text only
-  CHECKING:'checking',// waiting for Claude
-  PASS:    'pass',    // Claude said YES → reveal emoji, offer save
-  FAIL:    'fail',    // Claude said NO  → try again or skip
+  DRAW:     'draw',
+  CHECKING: 'checking',
+  PASS:     'pass',
+  FAIL:     'fail',
 }
 
-// Hint levels: 0 = word only, 1 = silhouette emoji, 2 = colour emoji
 const HINT = { NONE: 0, SILHOUETTE: 1, COLOR: 2 }
 
 export default function DrawTab({ words, onSaveDrawing }) {
@@ -22,13 +22,14 @@ export default function DrawTab({ words, onSaveDrawing }) {
     isEraser, setIsEraser, hasStrokes,
     initCanvas, startDraw, draw, endDraw, clearCanvas, getDataURL,
   } = useDrawing()
+  const { t } = useLang()
 
   const [activeCat, setActiveCat] = useState('all')
   const [poolIndex, setPoolIndex] = useState(0)
-  const [phase,   setPhase]   = useState(PHASE.DRAW)
-  const [aiMsg,   setAiMsg]   = useState('')
+  const [phase,    setPhase]    = useState(PHASE.DRAW)
+  const [aiMsg,    setAiMsg]    = useState('')
   const [savedMsg, setSavedMsg] = useState(false)
-  const [hint,    setHint]    = useState(HINT.NONE)
+  const [hint,     setHint]     = useState(HINT.NONE)
 
   const pool = useMemo(
     () => activeCat === 'all' ? words : words.filter(w => w.cat === activeCat),
@@ -62,7 +63,6 @@ export default function DrawTab({ words, onSaveDrawing }) {
     setHint(HINT.NONE)
   }
 
-  // Re-initialise canvas when word changes
   useEffect(() => {
     const id = setTimeout(initCanvas, 50)
     return () => clearTimeout(id)
@@ -95,11 +95,6 @@ export default function DrawTab({ words, onSaveDrawing }) {
 
   const isDrawing = phase === PHASE.DRAW
 
-  // Silhouette = emoji rendered in black via CSS filter
-  const silhouette = (
-    <span className="hint-silhouette">{word.emoji}</span>
-  )
-
   return (
     <div className="draw-tab">
       {/* Category filter */}
@@ -110,64 +105,63 @@ export default function DrawTab({ words, onSaveDrawing }) {
             className={`cat-pill${activeCat === cat ? ' cat-pill--active' : ''}`}
             onClick={() => handleCategoryChange(cat)}
           >
-            {cat}
+            {t[CAT_KEYS[cat]]}
           </button>
         ))}
       </div>
 
-      {/* Word prompt — word + progressive hint */}
+      {/* Word prompt */}
       <div className={`draw-word-prompt ${!isDrawing ? 'draw-word-prompt--hidden' : ''}`}>
-        <div className="draw-word-prompt__label">Draw this word:</div>
+        <div className="draw-word-prompt__label">{t.drawPrompt}</div>
         <div className="draw-word-prompt__word">{word.en}</div>
         {hint === HINT.SILHOUETTE && (
-          <div className="draw-hint draw-hint--silhouette">{silhouette}</div>
+          <div className="draw-hint">
+            <span className="hint-silhouette">{word.emoji}</span>
+          </div>
         )}
         {hint === HINT.COLOR && (
           <div className="draw-hint draw-hint--color">{word.emoji}</div>
         )}
         {isDrawing && hint < HINT.COLOR && (
           <div className="draw-hint-btns">
-            <button
-              className="btn btn--hint"
-              onClick={() => setHint(h => h + 1)}
-            >
-              💡 Hint {hint + 1}
+            <button className="btn btn--hint" onClick={() => setHint(h => h + 1)}>
+              {t.hint(hint + 1)}
             </button>
           </div>
         )}
       </div>
 
-      {/* Result banner (shown after AI check) */}
+      {/* Result banners */}
       {phase === PHASE.CHECKING && (
         <div className="draw-result draw-result--checking">
-          <span className="draw-result__spinner">⏳</span> Checking your drawing…
+          <span className="draw-result__spinner">⏳</span> {t.checking}
         </div>
       )}
       {phase === PHASE.PASS && (
         <div className="draw-result draw-result--pass">
           <div className="draw-result__reveal">{word.emoji}</div>
-          <div className="draw-result__title">✅ That looks like {word.en}!</div>
+          <div className="draw-result__title">{t.passTitle(word.en)}</div>
           <div className="draw-result__msg">{aiMsg}</div>
           <div className="draw-result__actions">
-            <button className="btn btn--primary" onClick={handleSave}>💾 Save to Gallery</button>
-            <button className="btn btn--ghost" onClick={goNext}>Skip →</button>
+            <button className="btn btn--primary" onClick={handleSave}>{t.saveGallery}</button>
+            <button className="btn btn--ghost" onClick={goNext}>{t.skip}</button>
           </div>
         </div>
       )}
       {phase === PHASE.FAIL && (
         <div className="draw-result draw-result--fail">
-          <div className="draw-result__title">❌ Not quite…</div>
+          <div className="draw-result__title">{t.failTitle}</div>
           <div className="draw-result__msg">{aiMsg}</div>
           <div className="draw-result__actions">
             <button className="btn btn--primary" onClick={() => { clearCanvas(); setPhase(PHASE.DRAW) }}>
-              Try again ↩
+              {t.tryAgain}
             </button>
-            <button className="btn btn--ghost" onClick={goNext}>Next word →</button>
+            <button className="btn btn--ghost" onClick={goNext}>{t.nextWord}</button>
           </div>
         </div>
       )}
 
-      {/* Canvas — always visible so drawing persists while result is shown */}
+      {/* Canvas */}
       <canvas
         ref={canvasRef}
         className="drawing-canvas"
@@ -181,7 +175,7 @@ export default function DrawTab({ words, onSaveDrawing }) {
         onTouchEnd={endDraw}
       />
 
-      {/* Toolbar — only interactive while drawing */}
+      {/* Toolbar */}
       {isDrawing && (
         <>
           <div className="draw-toolbar">
@@ -222,15 +216,11 @@ export default function DrawTab({ words, onSaveDrawing }) {
           </div>
 
           <div className="draw-actions">
-            <button className="btn btn--ghost" onClick={goPrev}>← Prev</button>
-            <button className="btn btn--ghost" onClick={clearCanvas}>🗑️ Clear</button>
-            <button className="btn btn--ghost" onClick={goNext}>Next →</button>
-            <button
-              className="btn btn--primary"
-              onClick={handleCheck}
-              disabled={!hasStrokes}
-            >
-              ✓ Check
+            <button className="btn btn--ghost" onClick={goPrev}>{t.prev}</button>
+            <button className="btn btn--ghost" onClick={clearCanvas}>{t.clear}</button>
+            <button className="btn btn--ghost" onClick={goNext}>{t.next}</button>
+            <button className="btn btn--primary" onClick={handleCheck} disabled={!hasStrokes}>
+              {t.checkBtn}
             </button>
           </div>
         </>
