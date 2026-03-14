@@ -12,6 +12,9 @@ const PHASE = {
   FAIL:    'fail',    // Claude said NO  → try again or skip
 }
 
+// Hint levels: 0 = word only, 1 = silhouette emoji, 2 = colour emoji
+const HINT = { NONE: 0, SILHOUETTE: 1, COLOR: 2 }
+
 export default function DrawTab({ words, currentIndex, onSaveDrawing }) {
   const {
     canvasRef, color, setColor, brushSize, setBrushSize,
@@ -22,12 +25,14 @@ export default function DrawTab({ words, currentIndex, onSaveDrawing }) {
   const [phase,   setPhase]   = useState(PHASE.DRAW)
   const [aiMsg,   setAiMsg]   = useState('')
   const [savedMsg, setSavedMsg] = useState(false)
+  const [hint,    setHint]    = useState(HINT.NONE)
 
   const word = words[Math.min(currentIndex, words.length - 1)]
 
-  // Re-initialise canvas when we move to a new word or restart
+  // Re-initialise canvas and reset hint when we move to a new word or restart
   useEffect(() => {
     const id = setTimeout(initCanvas, 50)
+    setHint(HINT.NONE)
     return () => clearTimeout(id)
   }, [currentIndex])
 
@@ -60,16 +65,38 @@ export default function DrawTab({ words, currentIndex, onSaveDrawing }) {
     clearCanvas()
     setPhase(PHASE.DRAW)
     setAiMsg('')
+    setHint(HINT.NONE)
   }
 
   const isDrawing = phase === PHASE.DRAW
 
+  // Silhouette = emoji rendered in black via CSS filter
+  const silhouette = (
+    <span className="hint-silhouette">{word.emoji}</span>
+  )
+
   return (
     <div className="draw-tab">
-      {/* Word prompt — TEXT ONLY (no emoji, no image) */}
+      {/* Word prompt — word + progressive hint */}
       <div className={`draw-word-prompt ${!isDrawing ? 'draw-word-prompt--hidden' : ''}`}>
         <div className="draw-word-prompt__label">Draw this word:</div>
         <div className="draw-word-prompt__word">{word.en}</div>
+        {hint === HINT.SILHOUETTE && (
+          <div className="draw-hint draw-hint--silhouette">{silhouette}</div>
+        )}
+        {hint === HINT.COLOR && (
+          <div className="draw-hint draw-hint--color">{word.emoji}</div>
+        )}
+        {isDrawing && hint < HINT.COLOR && (
+          <div className="draw-hint-btns">
+            <button
+              className="btn btn--hint"
+              onClick={() => setHint(h => h + 1)}
+            >
+              💡 Hint {hint + 1}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Result banner (shown after AI check) */}

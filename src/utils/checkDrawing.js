@@ -1,38 +1,36 @@
 /**
- * Sends a canvas drawing to Claude vision API and checks
+ * Sends a canvas drawing to OpenRouter vision API and checks
  * whether it matches the given English word.
  *
- * Uses claude-haiku-4-5 for fast, low-latency feedback — this is
- * a simple image classification task that needs real-time UX response.
+ * Uses google/gemini-flash-1.5 by default — fast and cheap vision model.
+ * Change VITE_OR_MODEL in .env.local to override.
  *
- * Requires VITE_ANTHROPIC_API_KEY in .env.local
+ * Requires VITE_OPENROUTER_API_KEY in .env.local
  */
 export async function checkDrawing(dataURL, word) {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+  const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY
   if (!apiKey) {
-    throw new Error('Missing VITE_ANTHROPIC_API_KEY in .env.local')
+    throw new Error('Missing VITE_OPENROUTER_API_KEY in .env.local')
   }
 
-  const base64 = dataURL.split(',')[1]
+  const model = import.meta.env.VITE_OR_MODEL || 'google/gemini-1.5-flash'
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-      'anthropic-dangerous-request-from-browser': 'true',
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
+      model,
       max_tokens: 120,
       messages: [
         {
           role: 'user',
           content: [
             {
-              type: 'image',
-              source: { type: 'base64', media_type: 'image/png', data: base64 },
+              type: 'image_url',
+              image_url: { url: dataURL },
             },
             {
               type: 'text',
@@ -52,9 +50,8 @@ Answer with YES or NO on the first line, then one short encouraging sentence (ma
   }
 
   const data = await res.json()
-  const text = (data.content?.[0]?.text ?? '').trim()
+  const text = (data.choices?.[0]?.message?.content ?? '').trim()
   const passed = text.toUpperCase().startsWith('YES')
-  // Extract the encouraging sentence (second line or after YES/NO)
   const lines = text.split('\n').filter(Boolean)
   const message = lines.slice(1).join(' ') || (passed ? 'Great job!' : 'Nice try!')
 

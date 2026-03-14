@@ -25,13 +25,12 @@ export function useDrawing() {
   }
 
   const getPos = useCallback((e, canvas) => {
-    const rect   = canvas.getBoundingClientRect()
-    const scaleX = canvas.width  / rect.width
-    const scaleY = canvas.height / rect.height
-    const src    = e.touches ? e.touches[0] : e
+    const rect = canvas.getBoundingClientRect()
+    const src  = e.touches ? e.touches[0] : e
+    // ctx.scale(dpr, dpr) is already applied, so use CSS pixel coords directly
     return {
-      x: (src.clientX - rect.left) * scaleX,
-      y: (src.clientY - rect.top)  * scaleY,
+      x: src.clientX - rect.left,
+      y: src.clientY - rect.top,
     }
   }, [])
 

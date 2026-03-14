@@ -402,6 +402,37 @@ button { font-family: inherit; cursor: pointer; }
   color: var(--text);
   letter-spacing: -0.5px;
 }
+.draw-hint {
+  margin-top: 10px;
+  line-height: 1;
+}
+.hint-silhouette {
+  display: inline-block;
+  font-size: 56px;
+  filter: brightness(0);
+}
+.draw-hint--color {
+  font-size: 56px;
+}
+.draw-hint-btns {
+  margin-top: 10px;
+}
+.btn--hint {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.btn--hint:hover {
+  background: var(--green-light);
+  color: var(--green-dark);
+  border-color: var(--green);
+}
 
 /* ===== DRAW RESULT BANNER ===== */
 .draw-result {
