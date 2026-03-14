@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence, type PanInfo } from 'framer-motion'
 
@@ -17,188 +17,201 @@ import { VOCABULARY } from '@/data/vocabulary'
 
 type Step = 'draw' | 'word' | 'phrase' | 'pattern' | 'sentence' | 'situation'
 const STEPS: Step[] = ['draw', 'word', 'phrase', 'pattern', 'sentence', 'situation']
-
 const STEP_LABELS: Record<Step, string> = {
   draw: 'Draw', word: 'Word', phrase: 'Phrase',
   pattern: 'Pattern', sentence: 'Sentence', situation: 'Practice',
 }
 
-const SWIPE_DIST = 50   // px minimum to count as a swipe
-const SWIPE_VEL  = 300  // px/s minimum velocity
+// Transition used for every card slide
+const SLIDE = { type: 'tween' as const, duration: 0.32, ease: [0.25, 0.46, 0.45, 0.94] }
 
-type AnimDir = { x: number; y: number }
+// How many px / px·s to count as a swipe
+const DIST = 45
+const VEL  = 250
+
+type Dir = { x: number; y: number }
 
 export default function LearnPage() {
   const router = useRouter()
+
   const [wordIndex, setWordIndex] = useState(0)
   const [stepIndex, setStepIndex] = useState(0)
-  const [finished, setFinished] = useState(false)
-  const [anim, setAnim] = useState<AnimDir>({ x: 1, y: 0 })
+  const [finished,  setFinished]  = useState(false)
+  const [dir, setDir] = useState<Dir>({ x: 1, y: 0 })
+
+  // keep a ref so gesture handler always sees latest values
+  const stateRef = useRef({ wordIndex, stepIndex, finished })
+  useEffect(() => { stateRef.current = { wordIndex, stepIndex, finished } }, [wordIndex, stepIndex, finished])
 
   const scenario = SCENARIOS[wordIndex]
-  const vocab = VOCABULARY.find(v => v.id === scenario.vocabId)
-  const referenceEmoji = vocab?.referenceEmoji ?? scenario.topicIcon
-  const currentStep = STEPS[stepIndex]
+  const vocab    = VOCABULARY.find(v => v.id === scenario.vocabId)
+  const refEmoji = vocab?.referenceEmoji ?? scenario.topicIcon
+  const step     = STEPS[stepIndex]
 
-  // ── Navigation helpers ──────────────────────────────────────────────────────
+  // ── Navigation ────────────────────────────────────────────────────────────
 
   const goNextStage = useCallback(() => {
-    setAnim({ x: 1, y: 0 })
-    if (stepIndex < STEPS.length - 1) setStepIndex(i => i + 1)
-  }, [stepIndex])
+    const { stepIndex: si, finished: fin } = stateRef.current
+    if (fin || si >= STEPS.length - 1) return
+    setDir({ x: 1, y: 0 })
+    setStepIndex(si + 1)
+  }, [])
 
   const goPrevStage = useCallback(() => {
-    if (stepIndex === 0) return
-    setAnim({ x: -1, y: 0 })
-    setStepIndex(i => i - 1)
-  }, [stepIndex])
+    const { stepIndex: si } = stateRef.current
+    if (si <= 0) return
+    setDir({ x: -1, y: 0 })
+    setStepIndex(si - 1)
+  }, [])
 
   const goNextWord = useCallback(() => {
-    if (wordIndex >= SCENARIOS.length - 1) return
-    setAnim({ x: 0, y: 1 })
-    setWordIndex(i => i + 1)
+    const { wordIndex: wi } = stateRef.current
+    if (wi >= SCENARIOS.length - 1) return
+    setDir({ x: 0, y: 1 })
+    setWordIndex(wi + 1)
     setStepIndex(0)
     setFinished(false)
-  }, [wordIndex])
+  }, [])
 
   const goPrevWord = useCallback(() => {
-    if (wordIndex === 0) return
-    setAnim({ x: 0, y: -1 })
-    setWordIndex(i => i - 1)
+    const { wordIndex: wi } = stateRef.current
+    if (wi <= 0) return
+    setDir({ x: 0, y: -1 })
+    setWordIndex(wi - 1)
     setStepIndex(0)
     setFinished(false)
-  }, [wordIndex])
+  }, [])
 
   const advance = useCallback(() => {
-    if (finished) return
-    if (stepIndex < STEPS.length - 1) {
-      setAnim({ x: 1, y: 0 })
-      setStepIndex(i => i + 1)
-    }
-  }, [stepIndex, finished])
+    const { stepIndex: si, finished: fin } = stateRef.current
+    if (fin) return
+    if (si < STEPS.length - 1) { setDir({ x: 1, y: 0 }); setStepIndex(si + 1) }
+  }, [])
 
-  const handleFinished = useCallback(() => setFinished(true), [])
-
-  // ── Keyboard navigation ─────────────────────────────────────────────────────
+  // ── Keyboard ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+    const fn = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') goNextStage()
       if (e.key === 'ArrowLeft')  goPrevStage()
       if (e.key === 'ArrowDown')  goNextWord()
       if (e.key === 'ArrowUp')    goPrevWord()
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
   }, [goNextStage, goPrevStage, goNextWord, goPrevWord])
 
-  // ── Swipe/pan handler ───────────────────────────────────────────────────────
+  // ── Swipe / drag handler ──────────────────────────────────────────────────
 
-  const handlePanEnd = useCallback((_e: PointerEvent, info: PanInfo) => {
-    // Don't intercept drawing gestures
-    if (currentStep === 'draw') return
+  const onPanEnd = useCallback((_e: PointerEvent, info: PanInfo) => {
+    // Drawing canvas handles its own touch events — don't hijack
+    if (stateRef.current.finished === false && step === 'draw') return
 
     const { offset, velocity } = info
-    const absX = Math.abs(offset.x)
-    const absY = Math.abs(offset.y)
+    const absX = Math.abs(offset.x), absY = Math.abs(offset.y)
 
     if (absX >= absY) {
-      // Horizontal swipe → stage navigation
-      if (absX > SWIPE_DIST || Math.abs(velocity.x) > SWIPE_VEL) {
-        if (offset.x < 0) goNextStage()
-        else goPrevStage()
+      // horizontal → stage
+      if (absX > DIST || Math.abs(velocity.x) > VEL) {
+        offset.x < 0 ? goNextStage() : goPrevStage()
       }
     } else {
-      // Vertical swipe → word navigation
-      if (absY > SWIPE_DIST || Math.abs(velocity.y) > SWIPE_VEL) {
-        if (offset.y < 0) goNextWord()
-        else goPrevWord()
+      // vertical → word (Reels scroll)
+      if (absY > DIST || Math.abs(velocity.y) > VEL) {
+        offset.y < 0 ? goNextWord() : goPrevWord()
       }
     }
-  }, [currentStep, goNextStage, goPrevStage, goNextWord, goPrevWord])
+  }, [step, goNextStage, goPrevStage, goNextWord, goPrevWord])
 
-  // ── Derived state ───────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   const isFirstStep = stepIndex === 0
   const isLastStep  = stepIndex === STEPS.length - 1
   const isFirstWord = wordIndex === 0
   const isLastWord  = wordIndex === SCENARIOS.length - 1
+  const cardKey     = `${wordIndex}-${finished ? 'done' : step}`
 
-  const cardKey = `${wordIndex}-${finished ? 'done' : currentStep}`
+  // enter from / exit toward based on swipe direction
+  const enterX = dir.x * 420, enterY = dir.y * 750
+  const exitX  = dir.x * -420, exitY  = dir.y * -750
 
   return (
     <AppLayout>
-      {/* ── Top bar ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center px-4 pt-3 pb-2 gap-3 flex-shrink-0">
+
+      {/* ── Top HUD ──────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 px-4 pt-3 pb-1 flex-shrink-0 z-10">
+
+        {/* Home */}
         <button
           onClick={() => router.push('/')}
           className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 flex-shrink-0"
-          aria-label="Home"
-        >
-          ←
-        </button>
+        >←</button>
 
-        {/* Horizontal stage dots */}
-        <div className="flex-1 flex items-center justify-center gap-1.5">
+        {/* Horizontal stage dots (tappable) */}
+        <div className="flex-1 flex items-center justify-center gap-2">
           {STEPS.map((s, i) => (
             <button
               key={s}
-              onClick={() => { setAnim({ x: i > stepIndex ? 1 : -1, y: 0 }); setStepIndex(i); setFinished(false) }}
+              onClick={() => {
+                if (finished) { setFinished(false) }
+                setDir({ x: i > stepIndex ? 1 : -1, y: 0 })
+                setStepIndex(i)
+              }}
+              aria-label={STEP_LABELS[s]}
               className={`rounded-full transition-all duration-200 ${
                 i === stepIndex && !finished
-                  ? 'w-6 h-2.5 bg-primary'
+                  ? 'w-7 h-2.5 bg-primary'
                   : i < stepIndex || finished
-                  ? 'w-2.5 h-2.5 bg-primary opacity-50'
+                  ? 'w-2.5 h-2.5 bg-primary/50'
                   : 'w-2.5 h-2.5 bg-gray-200'
               }`}
-              aria-label={STEP_LABELS[s]}
             />
           ))}
         </div>
 
-        {/* Word counter + icon */}
+        {/* Word counter */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-xs font-bold text-gray-400 tabular-nums">
-            {wordIndex + 1}/{SCENARIOS.length}
-          </span>
-          <span className="text-lg">{scenario.topicIcon}</span>
+          <span className="text-xs font-bold text-gray-400 tabular-nums">{wordIndex + 1}/{SCENARIOS.length}</span>
+          <span className="text-base">{scenario.topicIcon}</span>
         </div>
       </div>
 
-      {/* Stage label pill */}
+      {/* Stage label */}
       {!finished && (
-        <div className="flex justify-center pb-2 flex-shrink-0">
-          <span className="text-xs font-semibold bg-primary text-white px-3 py-1 rounded-full uppercase tracking-wider">
-            {STEP_LABELS[currentStep]}
+        <div className="flex justify-center pb-1.5 flex-shrink-0">
+          <span className="text-[11px] font-bold bg-primary text-white px-3 py-0.5 rounded-full uppercase tracking-widest">
+            {STEP_LABELS[step]}
           </span>
         </div>
       )}
 
-      {/* ── Swipeable card area ───────────────────────────────────────────── */}
+      {/* ── Swipeable card ───────────────────────────────────────────────── */}
       <motion.div
-        className="flex flex-col flex-1 overflow-hidden touch-pan-y"
-        onPanEnd={handlePanEnd}
+        className="flex-1 overflow-hidden relative"
+        /* rubber-band drag for visual feedback — draw step excluded */
+        drag={step !== 'draw'}
+        dragConstraints={{ top: 0, bottom: 0, left: 0, right: 0 }}
+        dragElastic={0.12}
+        dragMomentum={false}
+        onPanEnd={onPanEnd}
+        style={{ touchAction: step === 'draw' ? 'none' : 'none' }}
       >
         <AnimatePresence mode="wait">
           <motion.div
             key={cardKey}
-            initial={{ opacity: 0, x: anim.x * 60, y: anim.y * 60 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            exit={{ opacity: 0, x: anim.x * -40, y: anim.y * -40 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="flex flex-col flex-1"
+            initial={{ x: enterX, y: enterY, opacity: 0 }}
+            animate={{ x: 0,      y: 0,      opacity: 1, transition: SLIDE }}
+            exit={{   x: exitX,  y: exitY,  opacity: 0, transition: SLIDE }}
+            className="absolute inset-0 flex flex-col overflow-y-auto"
           >
             {finished ? (
-              /* ── Completion card ───────────────────────────────────────── */
-              <div className="flex flex-col items-center justify-center flex-1 gap-6 px-8 py-8">
+              /* ── Completion ──────────────────────────────────────────── */
+              <div className="flex flex-col items-center justify-center flex-1 gap-5 px-8 py-8">
                 <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
+                  initial={{ scale: 0 }} animate={{ scale: 1 }}
                   transition={{ type: 'spring', stiffness: 220, delay: 0.1 }}
                   className="text-8xl"
-                >
-                  🎉
-                </motion.span>
+                >🎉</motion.span>
                 <div className="text-center">
                   <h2 className="text-3xl font-extrabold text-gray-900">Well done!</h2>
                   <p className="mt-1 text-sm text-gray-400">You learned to say:</p>
@@ -209,45 +222,37 @@ export default function LearnPage() {
                 <div className="flex flex-col gap-2 w-full">
                   <button
                     onClick={() => { setStepIndex(0); setFinished(false) }}
-                    className="bg-primary-light text-primary rounded-2xl py-3 px-6 text-base font-bold w-full border-2 border-primary"
-                  >
-                    🔁 Practice Again
-                  </button>
+                    className="bg-primary-light text-primary rounded-2xl py-3 px-6 font-bold border-2 border-primary"
+                  >🔁 Practice Again</button>
                   {!isLastWord && (
                     <button
                       onClick={goNextWord}
-                      className="bg-primary text-white rounded-2xl py-3 px-6 text-base font-bold w-full"
-                    >
-                      Next Word →
-                    </button>
+                      className="bg-primary text-white rounded-2xl py-3 px-6 font-bold"
+                    >Next Word →</button>
                   )}
                 </div>
                 <p className="text-xs text-gray-300">or swipe ↑ for next word</p>
               </div>
             ) : (
-              /* ── Active lesson step ────────────────────────────────────── */
+              /* ── Lesson steps ────────────────────────────────────────── */
               <>
-                {currentStep === 'draw' && (
-                  <DrawingCanvas
-                    word={scenario.word}
-                    referenceEmoji={referenceEmoji}
-                    onComplete={advance}
-                  />
+                {step === 'draw' && (
+                  <DrawingCanvas word={scenario.word} referenceEmoji={refEmoji} onComplete={advance} />
                 )}
-                {currentStep === 'word' && (
+                {step === 'word' && (
                   <WordCard scenario={scenario} onNext={advance} />
                 )}
-                {currentStep === 'phrase' && (
+                {step === 'phrase' && (
                   <PhraseCard scenario={scenario} onNext={advance} />
                 )}
-                {currentStep === 'pattern' && (
+                {step === 'pattern' && (
                   <PatternBuilder scenario={scenario} onNext={advance} />
                 )}
-                {currentStep === 'sentence' && (
+                {step === 'sentence' && (
                   <SentenceCard scenario={scenario} onNext={advance} />
                 )}
-                {currentStep === 'situation' && (
-                  <ScenarioDialogue scenario={scenario} onComplete={handleFinished} />
+                {step === 'situation' && (
+                  <ScenarioDialogue scenario={scenario} onComplete={() => setFinished(true)} />
                 )}
               </>
             )}
@@ -255,103 +260,90 @@ export default function LearnPage() {
         </AnimatePresence>
       </motion.div>
 
-      {/* ── Desktop / fallback nav arrows ────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-white flex-shrink-0">
-        {/* Stage nav */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={goPrevStage}
-            disabled={isFirstStep || finished}
-            className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-lg
-              disabled:opacity-25 active:scale-95 hover:bg-gray-200 transition-all"
-            aria-label="Previous stage"
-          >
-            ←
-          </button>
-          <span className="text-xs text-gray-400 font-medium w-16 text-center leading-tight">
-            {finished ? '✅ done' : STEP_LABELS[currentStep]}
-          </span>
-          <button
-            onClick={goNextStage}
-            disabled={isLastStep || finished}
-            className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-lg
-              disabled:opacity-25 active:scale-95 hover:bg-gray-200 transition-all"
-            aria-label="Next stage"
-          >
-            →
-          </button>
-        </div>
+      {/* ── Button nav bar ───────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 px-3 py-3 border-t border-gray-100 bg-white flex-shrink-0">
 
-        {/* Vertical word dots */}
-        <div className="flex items-center gap-1">
+        {/* ← stage */}
+        <button
+          onClick={goPrevStage}
+          disabled={isFirstStep || finished}
+          className="w-11 h-11 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-lg
+            disabled:opacity-25 active:scale-95 transition-all"
+          aria-label="Previous stage"
+        >←</button>
+
+        {/* stage label */}
+        <span className="text-xs text-gray-400 font-medium text-center w-14 leading-tight">
+          {finished ? '✅' : STEP_LABELS[step]}
+        </span>
+
+        {/* → stage */}
+        <button
+          onClick={goNextStage}
+          disabled={isLastStep || finished}
+          className="w-11 h-11 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-lg
+            disabled:opacity-25 active:scale-95 transition-all"
+          aria-label="Next stage"
+        >→</button>
+
+        {/* word position dots */}
+        <div className="flex-1 flex items-center justify-center gap-1.5">
           {SCENARIOS.map((_, i) => (
             <button
               key={i}
               onClick={() => {
-                setAnim({ x: 0, y: i > wordIndex ? 1 : -1 })
-                setWordIndex(i)
-                setStepIndex(0)
-                setFinished(false)
+                setDir({ x: 0, y: i > wordIndex ? 1 : -1 })
+                setWordIndex(i); setStepIndex(0); setFinished(false)
               }}
               className={`rounded-full transition-all duration-200 ${
-                i === wordIndex
-                  ? 'w-2.5 h-2.5 bg-primary'
-                  : 'w-1.5 h-1.5 bg-gray-300'
+                i === wordIndex ? 'w-2.5 h-2.5 bg-primary' : 'w-1.5 h-1.5 bg-gray-300'
               }`}
               aria-label={SCENARIOS[i].topicLabel}
             />
           ))}
         </div>
 
-        {/* Word nav */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={goPrevWord}
-            disabled={isFirstWord}
-            className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-lg
-              disabled:opacity-25 active:scale-95 hover:bg-gray-200 transition-all"
-            aria-label="Previous word"
-          >
-            ↑
-          </button>
-          <button
-            onClick={goNextWord}
-            disabled={isLastWord}
-            className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-white font-bold text-lg
-              disabled:opacity-25 active:scale-95 hover:bg-primary/90 transition-all"
-            aria-label="Next word"
-          >
-            ↓
-          </button>
-        </div>
+        {/* ↑ word */}
+        <button
+          onClick={goPrevWord}
+          disabled={isFirstWord}
+          className="w-11 h-11 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-lg
+            disabled:opacity-25 active:scale-95 transition-all"
+          aria-label="Previous word"
+        >↑</button>
+
+        {/* ↓ word */}
+        <button
+          onClick={goNextWord}
+          disabled={isLastWord}
+          className="w-11 h-11 rounded-2xl bg-primary flex items-center justify-center text-white font-bold text-lg
+            disabled:opacity-25 active:scale-95 transition-all"
+          aria-label="Next word"
+        >↓</button>
       </div>
 
-      {/* Swipe hint (shown briefly on first load) */}
+      {/* ── First-load swipe hint ─────────────────────────────────────────── */}
       <SwipeHint />
     </AppLayout>
   )
 }
 
 function SwipeHint() {
-  const [visible, setVisible] = useState(true)
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(false), 2800)
-    return () => clearTimeout(t)
-  }, [])
-
+  const [show, setShow] = useState(true)
+  useEffect(() => { const t = setTimeout(() => setShow(false), 3000); return () => clearTimeout(t) }, [])
   return (
     <AnimatePresence>
-      {visible && (
+      {show && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
-          className="absolute bottom-20 left-0 right-0 flex justify-center pointer-events-none"
+          exit={{ opacity: 0, y: 8 }}
+          className="absolute bottom-20 inset-x-0 flex justify-center pointer-events-none"
         >
-          <div className="bg-gray-800/80 text-white text-xs font-medium px-4 py-2 rounded-full flex items-center gap-3">
+          <div className="bg-gray-900/75 text-white text-xs font-medium px-4 py-2 rounded-full flex items-center gap-3 backdrop-blur-sm">
             <span>← → stage</span>
-            <span className="text-gray-400">|</span>
-            <span>↑ ↓ word</span>
+            <span className="opacity-40">|</span>
+            <span>↑ ↓ scroll word</span>
           </div>
         </motion.div>
       )}
