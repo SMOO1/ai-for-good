@@ -3,6 +3,7 @@ import { CATEGORIES } from '../data/words'
 import { useTTS } from '../hooks/useTTS'
 
 function pickOptions(correct, pool) {
+  // 3 wrong English answers, shuffled with the correct one
   const others = pool
     .filter(w => w.en !== correct.en)
     .sort(() => Math.random() - 0.5)
@@ -10,14 +11,14 @@ function pickOptions(correct, pool) {
   return [correct, ...others].sort(() => Math.random() - 0.5)
 }
 
-function pickQuestion(words) {
-  return words[Math.floor(Math.random() * words.length)]
+function pickQuestion(pool) {
+  return pool[Math.floor(Math.random() * pool.length)]
 }
 
 export default function QuizTab({ words, score, onScoreChange }) {
-  const [activeCat,  setActiveCat]  = useState('all')
-  const [answered,   setAnswered]   = useState(null)   // null | 'correct' | 'wrong'
-  const [chosen,     setChosen]     = useState(null)
+  const [activeCat, setActiveCat]         = useState('all')
+  const [answered,  setAnswered]          = useState(null)    // null | 'correct' | 'wrong'
+  const [chosen,    setChosen]            = useState(null)
   const [showCelebration, setShowCelebration] = useState(false)
   const { speak } = useTTS()
 
@@ -27,6 +28,8 @@ export default function QuizTab({ words, score, onScoreChange }) {
   )
 
   const [question, setQuestion] = useState(() => pickQuestion(pool))
+
+  // Options are English words — user reads Rohingya and picks meaning
   const options = useMemo(() => pickOptions(question, pool.length >= 4 ? pool : words), [question])
 
   const nextQuestion = useCallback(() => {
@@ -38,13 +41,13 @@ export default function QuizTab({ words, score, onScoreChange }) {
   function handleAnswer(opt) {
     if (answered) return
     setChosen(opt)
-    if (opt.en === question.en) {
+    const correct = opt.en === question.en
+    if (correct) {
       const next = { ...score, correct: score.correct + 1 }
       onScoreChange(next)
       setAnswered('correct')
       speak(`${question.en}. In Rohingya: ${question.roh}`, 0.85)
-      // Celebrate every 5 correct answers
-      if ((next.correct) % 5 === 0) {
+      if (next.correct % 5 === 0) {
         setTimeout(() => setShowCelebration(true), 400)
       }
     } else {
@@ -83,20 +86,20 @@ export default function QuizTab({ words, score, onScoreChange }) {
         ))}
       </div>
 
-      {/* Question card */}
+      {/* Question card — show Rohingya word */}
       <div className="quiz-card">
-        <div className="quiz-card__emoji">{question.emoji}</div>
-        <div className="quiz-card__en">{question.en}</div>
-        <div className="quiz-card__prompt">Which is the Rohingya word?</div>
+        <div className="quiz-card__arabic">{question.arabic}</div>
+        <div className="quiz-card__roh">{question.roh}</div>
+        <div className="quiz-card__prompt">What does this mean in English?</div>
       </div>
 
-      {/* Options */}
+      {/* Options — English words */}
       <div className="quiz-options">
         {options.map(opt => {
-          let cls = 'quiz-option'
+          let cls = 'quiz-option quiz-option--en'
           if (answered) {
-            if (opt.en === question.en)          cls += ' quiz-option--correct'
-            else if (chosen?.en === opt.en)      cls += ' quiz-option--wrong'
+            if (opt.en === question.en) cls += ' quiz-option--correct'
+            else if (chosen?.en === opt.en) cls += ' quiz-option--wrong'
           }
           return (
             <button
@@ -105,8 +108,8 @@ export default function QuizTab({ words, score, onScoreChange }) {
               onClick={() => handleAnswer(opt)}
               disabled={!!answered}
             >
-              <span className="quiz-option__roh">{opt.roh}</span>
-              <span className="quiz-option__hint">{opt.en}</span>
+              <span className="quiz-option__emoji">{opt.emoji}</span>
+              <span className="quiz-option__en">{opt.en}</span>
             </button>
           )
         })}
@@ -116,10 +119,10 @@ export default function QuizTab({ words, score, onScoreChange }) {
       {answered && (
         <div className={`quiz-feedback quiz-feedback--${answered}`}>
           {answered === 'correct'
-            ? `✓ Correct! "${question.roh}" means ${question.en}`
-            : `✗ The answer was: ${question.roh} (${question.en})`}
+            ? `✓ "${question.roh}" means ${question.en}!`
+            : `✗ It means "${question.en}" (${question.roh})`}
           <button className="btn btn--primary btn--sm" onClick={nextQuestion}>
-            Next question →
+            Next →
           </button>
         </div>
       )}
@@ -129,8 +132,8 @@ export default function QuizTab({ words, score, onScoreChange }) {
         <div className="celebration" onClick={() => setShowCelebration(false)}>
           <div className="celebration__card" onClick={e => e.stopPropagation()}>
             <div className="celebration__emoji">🎉</div>
-            <div className="celebration__title">Amazing! {score.correct} in a row!</div>
-            <div className="celebration__sub">You&apos;re doing great. Keep going!</div>
+            <div className="celebration__title">Amazing! {score.correct} correct!</div>
+            <div className="celebration__sub">You&apos;re learning so fast!</div>
             <button
               className="btn btn--primary"
               onClick={() => { setShowCelebration(false); nextQuestion() }}

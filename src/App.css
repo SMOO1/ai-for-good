@@ -376,6 +376,72 @@ button { font-family: inherit; cursor: pointer; }
 }
 .draw-actions .btn { flex: 1; }
 
+/* ===== DRAW WORD PROMPT ===== */
+.draw-word-prompt {
+  text-align: center;
+  padding: 20px 16px 12px;
+  transition: opacity 0.2s, height 0.2s;
+}
+.draw-word-prompt--hidden {
+  opacity: 0;
+  pointer-events: none;
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.draw-word-prompt__label {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.draw-word-prompt__word {
+  font-size: 40px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+/* ===== DRAW RESULT BANNER ===== */
+.draw-result {
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  animation: fadeIn 0.25s ease-out;
+}
+.draw-result--checking {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 15px;
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
+}
+.draw-result__spinner {
+  display: inline-block;
+  animation: spin 1.2s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.draw-result--pass { background: #d4edda; }
+.draw-result--fail { background: #fde8e8; }
+
+.draw-result__reveal { font-size: 52px; line-height: 1; }
+.draw-result__title  { font-size: 18px; font-weight: 700; }
+.draw-result__msg    { font-size: 14px; color: var(--text-muted); }
+.draw-result__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .toast {
   position: fixed;
   bottom: 80px;
@@ -503,9 +569,19 @@ button { font-family: inherit; cursor: pointer; }
   align-items: center;
   gap: 8px;
 }
-.quiz-card__emoji   { font-size: 60px; line-height: 1; }
-.quiz-card__en      { font-size: 26px; font-weight: 700; }
-.quiz-card__prompt  { font-size: 14px; color: var(--text-muted); }
+/* Rohingya → English direction */
+.quiz-card__arabic {
+  font-size: 36px;
+  font-weight: 700;
+  direction: rtl;
+  font-family: 'Noto Nastaliq Urdu', 'Scheherazade New', serif;
+  line-height: 1.4;
+}
+.quiz-card__roh    { font-size: 18px; color: var(--text-muted); font-style: italic; }
+.quiz-card__prompt { font-size: 14px; color: var(--text-muted); }
+/* Legacy — kept for backwards compat */
+.quiz-card__emoji  { font-size: 60px; line-height: 1; }
+.quiz-card__en     { font-size: 26px; font-weight: 700; }
 
 .quiz-options { display: flex; flex-direction: column; gap: 10px; }
 .quiz-option {
@@ -522,10 +598,19 @@ button { font-family: inherit; cursor: pointer; }
   flex-direction: column;
   gap: 2px;
 }
+/* English-answer variant: emoji + word side by side */
+.quiz-option--en {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+.quiz-option__emoji { font-size: 26px; flex-shrink: 0; }
+.quiz-option__en    { font-size: 17px; font-weight: 600; }
 .quiz-option:hover:not(:disabled) { background: var(--bg-secondary); }
 .quiz-option:disabled { cursor: default; }
 .quiz-option--correct { background: #d4edda !important; border-color: var(--green) !important; }
 .quiz-option--wrong   { background: #fde8e8 !important; border-color: #e53e3e !important; }
+/* Legacy Rohingya-answer styles */
 .quiz-option__roh  { font-weight: 600; }
 .quiz-option__hint { font-size: 13px; color: var(--text-muted); }
 
