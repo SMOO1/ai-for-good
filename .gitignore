@@ -26,6 +26,9 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Dictionary PDF
+*.pdf
+
 # Python venv
 .venv/
 __pycache__/
