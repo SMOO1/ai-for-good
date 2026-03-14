@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What is this? – English Practice</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #020617;
+      --surface: #020617;
+      --surface-alt: #020617;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.15);
+      --danger: #ef4444;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --button: #1d4ed8;
+      --button-hover: #2563eb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #1d283a 0, #020617 50%, #000 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .card {
+      border-radius: 28px;
+      padding: 20px;
+      background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 130%);
+      border: 1px solid rgba(15, 23, 42, 0.9);
+      box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(148, 163, 184, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 55%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.22), transparent 60%);
+      mix-blend-mode: screen;
+      opacity: 0.9;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .card-inner {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .header {
+      grid-column: 1 / -1;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title {
+      font-size: 1.4rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      border-radius: 999px;
+      padding: 2px 8px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      color: var(--muted);
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .left,
+    .right {
+      border-radius: 20px;
+      border: 1px solid rgba(15, 23, 42, 0.9);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), #020617 70%);
+      padding: 14px;
+      backdrop-filter: blur(8px);
+    }
+
+    .capture-box {
+      border-radius: 18px;
+      border: 1px dashed rgba(148, 163, 184, 0.5);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      min-height: 240px;
+      text-align: center;
+    }
+
+    .capture-hint {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .preview {
+      max-width: 100%;
+      max-height: 220px;
+      border-radius: 12px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      object-fit: contain;
+      background: #020617;
+    }
+
+    .btn {
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      border: 1px solid transparent;
+      background: rgba(15, 23, 42, 0.92);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease-out;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(to right, var(--button), #22c55e);
+      border-color: rgba(129, 140, 248, 0.9);
+      box-shadow:
+        0 0 0 1px rgba(129, 140, 248, 0.5),
+        0 12px 28px rgba(37, 99, 235, 0.6);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .btn-ghost {
+      border-color: rgba(15, 23, 42, 0.5);
+      background: rgba(15, 23, 42, 0.7);
+      color: var(--muted);
+    }
+
+    .btn-ghost:hover {
+      border-color: rgba(148, 163, 184, 0.7);
+      color: var(--text);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .btn-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.95);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .chip {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      color: var(--muted);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .result-word {
+      font-size: 1.5rem;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .result-translation {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.8rem;
+      border: 1px solid rgba(34, 197, 94, 0.7);
+      background: var(--accent-soft);
+      color: #bbf7d0;
+    }
+
+    .badge-secondary {
+      border-color: rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.85);
+      color: var(--muted);
+    }
+
+    .secondary-text {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .label-list {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .label-item {
+      margin-bottom: 2px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <div class="card">
+      <div class="card-inner">
+        <header class="header">
+          <div>
+            <div class="title">
+              What is this?
+              <span class="pill">Photo to English word</span>
+            </div>
+            <div class="subtitle">
+              Take a photo of an everyday object. We will guess the English word and show it with Rohingya support.
+            </div>
+          </div>
+        </header>
+
+        <section class="left">
+          <div class="capture-box">
+            <img id="preview" class="preview" src="" alt="" style="display: none" />
+            <div id="placeholder">
+              <div style="font-size: 2.2rem; margin-bottom: 6px;">📷</div>
+              <div class="capture-hint">
+                Aim at one object (for example: a cup, a phone, a chair).
+              </div>
+            </div>
+            <input id="file-input" class="file-input" type="file" accept="image/*" capture="environment" />
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+              <button id="camera-button" class="btn btn-primary">
+                <span class="btn-icon">📷</span>
+                Take a photo
+              </button>
+              <button id="upload-button" class="btn btn-ghost">
+                <span class="btn-icon">🖼</span>
+                Choose from gallery
+              </button>
+            </div>
+          </div>
+          <div class="chip-row">
+            <span class="chip">Runs completely in the browser</span>
+            <span class="chip">No internet needed after model loads</span>
+          </div>
+        </section>
+
+        <section class="right">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <div class="secondary-text">
+              We think this object is:
+            </div>
+            <button id="speak-button" class="btn btn-ghost" disabled>
+              <span class="btn-icon">🔊</span>
+              Say it
+            </button>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <div id="main-word" class="result-word">—</div>
+            <div id="translation" class="result-translation">Take a photo to start.</div>
+            <div id="confidence" class="badge badge-secondary">
+              <span>Model not loaded yet</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <div id="status" class="secondary-text">
+              Loading the visual model (one time)…
+            </div>
+            <div id="labels" class="label-list" style="display: none;">
+              <!-- filled by app.js -->
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- TensorFlow.js core -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <!-- Pre-trained MobileNet image classifier (ImageNet) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+
+</html>
+
