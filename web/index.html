@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Draw the Word – English Practice</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f172a;
+      --surface: #111827;
+      --surface-alt: #020617;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.18);
+      --danger: #ef4444;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --button: #1d4ed8;
+      --button-hover: #2563eb;
+      --card-radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #1d283a 0, #020617 50%, #000 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 960px;
+    }
+
+    .card {
+      background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 130%);
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(148, 163, 184, 0.07);
+      border: 1px solid rgba(15, 23, 42, 0.9);
+      position: relative;
+      padding: 20px;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 55%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.22), transparent 55%);
+      mix-blend-mode: screen;
+      opacity: 0.9;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 768px) {
+      .card-inner {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 4px 16px;
+      gap: 16px;
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .title {
+      font-size: 1.4rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .title-pill {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: var(--muted);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .score {
+      border-radius: 999px;
+      padding: 6px 14px;
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.2), transparent 70%);
+      border: 1px solid rgba(22, 163, 74, 0.5);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    .score-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(16, 185, 129, 0.18);
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      font-size: 0.75rem;
+    }
+
+    .main-layout {
+      display: contents;
+    }
+
+    .left-panel,
+    .right-panel {
+      border-radius: var(--card-radius);
+      border: 1px solid rgba(15, 23, 42, 0.9);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.85), #020617 70%);
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .left-panel::before,
+    .right-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at top, rgba(59, 130, 246, 0.16), transparent 60%),
+        radial-gradient(circle at bottom, rgba(15, 23, 42, 0.8), transparent 70%);
+      opacity: 0.9;
+      mix-blend-mode: screen;
+    }
+
+    .panel-inner {
+      position: relative;
+      z-index: 1;
+      padding: 16px 16px 14px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .prompt-chip {
+      align-self: flex-start;
+      font-size: 0.8rem;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .prompt-chip span.dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: radial-gradient(circle at top, #22c55e, #16a34a);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+    }
+
+    .word-line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .word-main {
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 650;
+    }
+
+    .word-translation {
+      font-size: 0.9rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .audio-button {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: rgba(15, 23, 42, 0.9);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.8rem;
+      transition: all 0.15s ease-out;
+    }
+
+    .audio-button:hover {
+      border-color: rgba(251, 191, 36, 0.9);
+      color: #facc15;
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.2);
+    }
+
+    .canvas-shell {
+      border-radius: 20px;
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.85), #020617 65%);
+      border: 1px solid rgba(15, 23, 42, 0.9);
+      padding: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .canvas-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(to bottom right, rgba(148, 163, 184, 0.08), transparent 40%),
+        linear-gradient(to top left, rgba(30, 64, 175, 0.2), transparent 60%);
+      mix-blend-mode: screen;
+      opacity: 0.65;
+    }
+
+    .canvas-inner {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(30, 64, 175, 0.7);
+      background: radial-gradient(circle at top, #020617, #020617 70%, #000 100%);
+    }
+
+    canvas {
+      width: 100%;
+      height: 260px;
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .canvas-hint {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.88);
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+    }
+
+    .canvas-hint span.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.9);
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .controls-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      border: 1px solid transparent;
+      background: rgba(15, 23, 42, 0.92);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease-out;
+      white-space: nowrap;
+    }
+
+    .btn-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.95);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(to right, var(--button), #22c55e);
+      border-color: rgba(129, 140, 248, 0.9);
+      box-shadow:
+        0 0 0 1px rgba(129, 140, 248, 0.5),
+        0 12px 28px rgba(37, 99, 235, 0.6);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .btn-outline {
+      border-color: rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .btn-outline:hover {
+      border-color: rgba(252, 211, 77, 0.9);
+      color: #fbbf24;
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost {
+      border-color: rgba(15, 23, 42, 0.5);
+      background: rgba(15, 23, 42, 0.7);
+      color: var(--muted);
+    }
+
+    .btn-ghost:hover {
+      border-color: rgba(148, 163, 184, 0.7);
+      color: var(--text);
+    }
+
+    .feedback {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      min-height: 22px;
+    }
+
+    .feedback-pill {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .feedback-pill.success {
+      background: var(--accent-soft);
+      color: #bbf7d0;
+      border: 1px solid rgba(34, 197, 94, 0.7);
+    }
+
+    .feedback-pill.error {
+      background: rgba(248, 113, 113, 0.16);
+      color: #fecaca;
+      border: 1px solid rgba(248, 113, 113, 0.8);
+    }
+
+    .feedback-icon {
+      font-size: 1.1rem;
+    }
+
+    .thumbs-big {
+      font-size: 2.4rem;
+      filter: drop-shadow(0 0 16px rgba(34, 197, 94, 0.9));
+    }
+
+    .ref-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ref-title {
+      font-size: 0.95rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ref-tag {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      color: var(--muted);
+    }
+
+    .ref-card {
+      margin-top: 8px;
+      border-radius: 16px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.92), #020617 70%);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 160px;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .ref-image {
+      width: 100%;
+      max-width: 220px;
+      border-radius: 12px;
+      object-fit: contain;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      background: #020617;
+      padding: 6px;
+    }
+
+    .ref-placeholder {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .ref-word {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .ref-translation {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .chip-small {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      color: var(--muted);
+      background: rgba(15, 23, 42, 0.8);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <div class="card">
+      <div class="card-inner">
+        <div class="header">
+          <div class="title-block">
+            <div class="title">
+              Draw the Word
+              <span class="title-pill">Basic English • Rohingya</span>
+            </div>
+            <div class="subtitle">
+              Look at the word. Draw it. If you are not sure, tap “Show picture”.
+            </div>
+          </div>
+          <div class="score" id="score-badge">
+            <span class="score-badge" id="score-circle">0</span>
+            <span id="score-text">Correct drawings</span>
+          </div>
+        </div>
+
+        <div class="main-layout">
+          <!-- LEFT: Drawing area -->
+          <section class="left-panel">
+            <div class="panel-inner">
+              <div class="prompt-chip">
+                <span class="dot"></span>
+                <span id="round-label">Word 1</span>
+              </div>
+
+              <div class="word-line">
+                <div class="word-main" id="target-word">HAMMER</div>
+                <div class="word-translation">
+                  <span id="target-translation">[Rohingya translation]</span>
+                  <button class="audio-button" id="audio-button" aria-label="Play word audio">
+                    &#128266;
+                  </button>
+                </div>
+              </div>
+
+              <div class="canvas-shell">
+                <div class="canvas-inner">
+                  <canvas id="draw-canvas"></canvas>
+                  <div class="canvas-hint">
+                    <span class="dot"></span>
+                    Use your finger or mouse
+                  </div>
+                </div>
+              </div>
+
+              <div class="controls-row">
+                <div class="controls-group">
+                  <button class="btn btn-outline" id="clear-button">
+                    <span class="btn-icon">&#128465;</span>
+                    Clear
+                  </button>
+                  <button class="btn btn-primary" id="check-button">
+                    <span class="btn-icon">&#128270;</span>
+                    Check my drawing
+                  </button>
+                </div>
+                <div class="controls-group">
+                  <button class="btn btn-ghost" id="skip-button">
+                    <span class="btn-icon">&#10067;</span>
+                    I don't know
+                  </button>
+                  <button class="btn btn-ghost" id="next-button" disabled>
+                    <span class="btn-icon">&#10140;</span>
+                    Next word
+                  </button>
+                </div>
+              </div>
+
+              <div class="feedback" id="feedback">
+                <!-- Filled by app.js -->
+              </div>
+            </div>
+          </section>
+
+          <!-- RIGHT: Reference picture / help -->
+          <section class="right-panel">
+            <div class="panel-inner">
+              <div class="ref-header">
+                <div class="ref-title">
+                  Reference picture
+                  <span class="ref-tag" id="help-mode-label">Hidden</span>
+                </div>
+                <div class="chips-row">
+                  <span class="chip-small">Tap “I don't know” to see</span>
+                </div>
+              </div>
+
+              <div class="ref-card" id="ref-card">
+                <div class="ref-placeholder" id="ref-placeholder">
+                  Try to draw the word first. If you need help, tap “I don't know”.
+                </div>
+                <img id="ref-image" class="ref-image" src="" alt="" style="display: none" />
+                <div id="ref-meta" style="display: none">
+                  <div class="ref-word" id="ref-word">HAMMER</div>
+                  <div class="ref-translation" id="ref-translation">[Rohingya translation]</div>
+                </div>
+              </div>
+
+              <div class="chips-row">
+                <span class="chip-small">Big buttons, simple steps</span>
+                <span class="chip-small">Pictures + audio help</span>
+                <span class="chip-small">Works offline (after model is loaded)</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TensorFlow.js (for when you plug in a sketch model) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+
+</html>
+
