@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import AudioButton from './AudioButton'
+import SpeakAndCheck from './SpeakAndCheck'
 import { speak } from '@/lib/speak'
 import type { ScenarioModule } from '@/data/scenarios'
 
@@ -13,6 +14,7 @@ interface PatternBuilderProps {
 
 export default function PatternBuilder({ scenario, onNext }: PatternBuilderProps) {
   const [selected, setSelected] = useState<string | null>(null)
+  const [passed, setPassed] = useState(false)
 
   const patternParts = scenario.pattern.split('___')
   const filledSentence = selected
@@ -21,6 +23,7 @@ export default function PatternBuilder({ scenario, onNext }: PatternBuilderProps
 
   const handleSelect = (option: string) => {
     setSelected(option)
+    setPassed(false)
     setTimeout(() => speak(patternParts[0] + option + (patternParts[1] ?? '')), 300)
   }
 
@@ -65,16 +68,26 @@ export default function PatternBuilder({ scenario, onNext }: PatternBuilderProps
         </div>
       </div>
 
-      {/* Generated sentence + audio */}
+      {/* Generated sentence + speak check (only after selection) */}
       <AnimatePresence>
         {filledSentence && (
           <motion.div
+            key={filledSentence}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full bg-primary-light rounded-3xl p-5 flex items-center justify-between gap-4"
+            className="w-full flex flex-col gap-3"
           >
-            <p className="text-2xl font-bold text-primary flex-1">{filledSentence}</p>
-            <AudioButton text={filledSentence} size="lg" />
+            <div className="w-full bg-primary-light rounded-3xl p-5 flex items-center justify-between gap-4">
+              <p className="text-2xl font-bold text-primary flex-1">{filledSentence}</p>
+              <AudioButton text={filledSentence} size="lg" />
+            </div>
+
+            <SpeakAndCheck
+              targetText={filledSentence}
+              focusWord={selected ?? undefined}
+              threshold={0.6}
+              onPass={() => setPassed(true)}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -83,7 +96,7 @@ export default function PatternBuilder({ scenario, onNext }: PatternBuilderProps
 
       <button
         onClick={onNext}
-        disabled={!selected}
+        disabled={!passed}
         className="bg-primary text-white rounded-2xl py-4 px-8 text-xl font-bold w-full disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Next →

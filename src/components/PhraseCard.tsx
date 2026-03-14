@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import AudioButton from './AudioButton'
+import SpeakAndCheck from './SpeakAndCheck'
 import { speak } from '@/lib/speak'
 import type { ScenarioModule } from '@/data/scenarios'
 
@@ -12,6 +13,8 @@ interface PhraseCardProps {
 }
 
 export default function PhraseCard({ scenario, onNext }: PhraseCardProps) {
+  const [passed, setPassed] = useState(false)
+
   useEffect(() => {
     const t = setTimeout(() => speak(scenario.phraseAudio), 500)
     return () => clearTimeout(t)
@@ -21,7 +24,7 @@ export default function PhraseCard({ scenario, onNext }: PhraseCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center gap-6 px-4 pb-6 flex-1"
+      className="flex flex-col items-center gap-5 px-4 pb-6 flex-1"
     >
       <p className="text-sm text-gray-500 font-medium uppercase tracking-wider">Building a phrase</p>
 
@@ -51,7 +54,6 @@ export default function PhraseCard({ scenario, onNext }: PhraseCardProps) {
           </motion.div>
         </div>
 
-        {/* Visual hint */}
         <div className="flex items-center gap-2 text-gray-500 text-sm">
           <span>word</span>
           <span>→</span>
@@ -76,11 +78,20 @@ export default function PhraseCard({ scenario, onNext }: PhraseCardProps) {
         </button>
       </div>
 
+      {/* Speak check */}
+      <SpeakAndCheck
+        targetText={scenario.phraseAudio}
+        focusWord={scenario.word}
+        threshold={0.5}
+        onPass={() => setPassed(true)}
+      />
+
       <div className="flex-1" />
 
       <button
         onClick={onNext}
-        className="bg-primary text-white rounded-2xl py-4 px-8 text-xl font-bold w-full"
+        disabled={!passed}
+        className="bg-primary text-white rounded-2xl py-4 px-8 text-xl font-bold w-full disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Next →
       </button>

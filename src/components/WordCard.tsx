@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import AudioButton from './AudioButton'
+import SpeakAndCheck from './SpeakAndCheck'
 import { speak } from '@/lib/speak'
 import type { ScenarioModule } from '@/data/scenarios'
 import { VOCABULARY } from '@/data/vocabulary'
@@ -14,8 +15,8 @@ interface WordCardProps {
 
 export default function WordCard({ scenario, onNext }: WordCardProps) {
   const vocab = VOCABULARY.find(v => v.id === scenario.vocabId)
+  const [passed, setPassed] = useState(false)
 
-  // Auto-play on mount
   useEffect(() => {
     const t = setTimeout(() => speak(scenario.wordAudio), 500)
     return () => clearTimeout(t)
@@ -25,10 +26,10 @@ export default function WordCard({ scenario, onNext }: WordCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center gap-6 px-4 pb-6 flex-1"
+      className="flex flex-col items-center gap-5 px-4 pb-6 flex-1"
     >
       {/* Reference emoji card */}
-      <div className="w-full bg-primary-light rounded-3xl flex items-center justify-center shadow-inner" style={{ minHeight: '200px' }}>
+      <div className="w-full bg-primary-light rounded-3xl flex items-center justify-center shadow-inner" style={{ minHeight: '180px' }}>
         <span className="text-9xl select-none">{vocab?.referenceEmoji ?? scenario.topicIcon}</span>
       </div>
 
@@ -49,11 +50,20 @@ export default function WordCard({ scenario, onNext }: WordCardProps) {
         </button>
       </div>
 
+      {/* Speak check */}
+      <SpeakAndCheck
+        targetText={scenario.wordAudio}
+        focusWord={scenario.word}
+        threshold={0.5}
+        onPass={() => setPassed(true)}
+      />
+
       <div className="flex-1" />
 
       <button
         onClick={onNext}
-        className="bg-primary text-white rounded-2xl py-4 px-8 text-xl font-bold w-full"
+        disabled={!passed}
+        className="bg-primary text-white rounded-2xl py-4 px-8 text-xl font-bold w-full disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Next →
       </button>

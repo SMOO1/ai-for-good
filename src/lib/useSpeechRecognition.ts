@@ -13,6 +13,8 @@ export interface SpeechResult {
 interface Options {
   targetText: string
   focusWord?: string
+  /** Similarity threshold 0–1 (default 0.75) */
+  threshold?: number
   onResult: (result: SpeechResult) => void
   onNoInput?: () => void
 }
@@ -42,7 +44,7 @@ function wordPresent(word: string, spoken: string): boolean {
   return normalize(spoken).split(' ').includes(normalize(word))
 }
 
-export function useSpeechRecognition({ targetText, focusWord, onResult, onNoInput }: Options) {
+export function useSpeechRecognition({ targetText, focusWord, threshold = 0.75, onResult, onNoInput }: Options) {
   const [recognitionState, setRecognitionState] = useState<RecognitionState>('idle')
   const [interimTranscript, setInterimTranscript] = useState('')
   const recognitionRef = useRef<any>(null)
@@ -106,7 +108,7 @@ export function useSpeechRecognition({ targetText, focusWord, onResult, onNoInpu
 
       const ratio = similarity(targetText, spoken)
       const okWord = focusWord ? wordPresent(focusWord, spoken) : true
-      const correct = ratio >= 0.75 && okWord
+      const correct = ratio >= threshold && okWord
 
       onResult({ correct, transcript: spoken })
 
