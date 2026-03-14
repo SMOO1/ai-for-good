@@ -10,7 +10,7 @@ import WordCard from '@/components/WordCard'
 import PhraseCard from '@/components/PhraseCard'
 import PatternBuilder from '@/components/PatternBuilder'
 import SentenceCard from '@/components/SentenceCard'
-import ScenarioDialogue from '@/components/ScenarioDialogue'
+import VideoDialogue from '@/components/VideoDialogue'
 
 import { SCENARIOS } from '@/data/scenarios'
 import { VOCABULARY } from '@/data/vocabulary'
@@ -244,7 +244,7 @@ export default function LearnPage() {
                   <SentenceCard scenario={scenario} onNext={advance} />
                 )}
                 {step === 'situation' && (
-                  <ScenarioDialogue scenario={scenario} onComplete={() => setFinished(true)} />
+                  <VideoDialogue scenario={scenario} onComplete={() => setFinished(true)} />
                 )}
               </>
             )}

@@ -50,6 +50,7 @@ export function useSpeechRecognition({ targetText, focusWord, threshold = 0.75, 
   const recognitionRef = useRef<any>(null)
   const startedAtRef = useRef(0)
   const handledRef = useRef(false)
+  const interimRef = useRef('')
 
   const isSupported =
     typeof window !== 'undefined' &&
@@ -91,7 +92,9 @@ export function useSpeechRecognition({ targetText, focusWord, threshold = 0.75, 
       const result = event.results[resultIndex]
 
       if (!result.isFinal) {
-        setInterimTranscript(result[0].transcript.trim())
+        const t = result[0].transcript.trim()
+        setInterimTranscript(t)
+        interimRef.current = t
         return
       }
 
@@ -123,5 +126,27 @@ export function useSpeechRecognition({ targetText, focusWord, threshold = 0.75, 
     setRecognitionState('idle')
   }, [])
 
-  return { recognitionState, interimTranscript, start, stop, isSupported }
+  // Force-evaluate whatever has been heard so far (interim or nothing)
+  const commitNow = useCallback(() => {
+    if (handledRef.current) return
+    const currentInterim = interimRef.current
+    handledRef.current = true
+    setInterimTranscript('')
+    interimRef.current = ''
+
+    const durationMs = Date.now() - startedAtRef.current
+
+    if (!currentInterim || durationMs < 600) {
+      onNoInput?.()
+    } else {
+      const ratio = similarity(targetText, currentInterim)
+      const okWord = focusWord ? wordPresent(focusWord, currentInterim) : true
+      const correct = ratio >= threshold && okWord
+      onResult({ correct, transcript: currentInterim })
+    }
+
+    try { recognitionRef.current?.stop() } catch { /* ignore */ }
+  }, [targetText, focusWord, threshold, onResult, onNoInput])
+
+  return { recognitionState, interimTranscript, start, stop, commitNow, isSupported }
 }
