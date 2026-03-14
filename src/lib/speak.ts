@@ -39,3 +39,21 @@ export function speak(text: string, rate = 0.85) {
 
   window.speechSynthesis.speak(u)
 }
+
+// Rohingya is spoken via romanized transliteration using TTS at a slower rate
+// so the phonetic approximation is more intelligible
+export function speakRohingya(text: string) {
+  if (typeof window === 'undefined') return
+  window.speechSynthesis.cancel()
+
+  const u = new SpeechSynthesisUtterance(text)
+  u.rate = 1.0
+  u.pitch = 1.0
+  // No specific Rohingya voice — romanized text is read phonetically
+  u.lang = 'en-US'
+
+  const voice = pickVoice()
+  if (voice) u.voice = voice
+
+  window.speechSynthesis.speak(u)
+}

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Draw to Speak',
+  title: 'FLUE',
   description: 'Learn English through pictures — visual and oral-first for Rohingya learners',
 }
 

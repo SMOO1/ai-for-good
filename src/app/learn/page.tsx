@@ -38,10 +38,11 @@ export default function LearnPage() {
   const [stepIndex, setStepIndex] = useState(0)
   const [finished,  setFinished]  = useState(false)
   const [dir, setDir] = useState<Dir>({ x: 1, y: 0 })
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
 
   // keep a ref so gesture handler always sees latest values
-  const stateRef = useRef({ wordIndex, stepIndex, finished })
-  useEffect(() => { stateRef.current = { wordIndex, stepIndex, finished } }, [wordIndex, stepIndex, finished])
+  const stateRef = useRef({ wordIndex, stepIndex, finished, completedSteps })
+  useEffect(() => { stateRef.current = { wordIndex, stepIndex, finished, completedSteps } }, [wordIndex, stepIndex, finished, completedSteps])
 
   const scenario = SCENARIOS[wordIndex]
   const vocab    = VOCABULARY.find(v => v.id === scenario.vocabId)
@@ -70,6 +71,7 @@ export default function LearnPage() {
     setWordIndex((wi + 1) % SCENARIOS.length)
     setStepIndex(0)
     setFinished(false)
+    setCompletedSteps(new Set())
   }, [])
 
   const goPrevWord = useCallback(() => {
@@ -78,6 +80,7 @@ export default function LearnPage() {
     setWordIndex((wi - 1 + SCENARIOS.length) % SCENARIOS.length)
     setStepIndex(0)
     setFinished(false)
+    setCompletedSteps(new Set())
   }, [])
 
   const advance = useCallback(() => {
@@ -85,6 +88,12 @@ export default function LearnPage() {
     if (fin) return
     if (si < STEPS.length - 1) { setDir({ x: 1, y: 0 }); setStepIndex(si + 1) }
   }, [])
+
+  // markAndAdvance captures stepIndex at render time — always reliable
+  const markAndAdvance = useCallback(() => {
+    setCompletedSteps(prev => new Set([...prev, stepIndex]))
+    advance()
+  }, [stepIndex, advance])
 
   // ── Keyboard ──────────────────────────────────────────────────────────────
 
@@ -148,24 +157,34 @@ export default function LearnPage() {
 
         {/* Horizontal stage dots (tappable) */}
         <div className="flex-1 flex items-center justify-center gap-2">
-          {STEPS.map((s, i) => (
-            <button
-              key={s}
-              onClick={() => {
-                if (finished) { setFinished(false) }
-                setDir({ x: i > stepIndex ? 1 : -1, y: 0 })
-                setStepIndex(i)
-              }}
-              aria-label={STEP_LABELS[s]}
-              className={`rounded-full transition-all duration-200 ${
-                i === stepIndex && !finished
-                  ? 'w-7 h-2.5 bg-primary'
-                  : i < stepIndex || finished
-                  ? 'w-2.5 h-2.5 bg-primary/50'
-                  : 'w-2.5 h-2.5 bg-gray-200'
-              }`}
-            />
-          ))}
+          {STEPS.map((s, i) => {
+            const isActive = i === stepIndex && !finished
+            const isDone   = completedSteps.has(i)
+            return (
+              <button
+                key={s}
+                onClick={() => {
+                  if (finished) { setFinished(false) }
+                  setDir({ x: i > stepIndex ? 1 : -1, y: 0 })
+                  setStepIndex(i)
+                }}
+                aria-label={STEP_LABELS[s]}
+                className={`rounded-full transition-all duration-200 flex items-center justify-center ${
+                  isActive
+                    ? 'w-7 h-2.5 bg-primary'
+                    : isDone
+                    ? 'w-5 h-5 bg-primary'
+                    : 'w-2.5 h-2.5 bg-gray-200'
+                }`}
+              >
+                {!isActive && isDone && (
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 5 L4 7 L8 3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         {/* Word counter */}
@@ -229,22 +248,25 @@ export default function LearnPage() {
               /* ── Lesson steps ────────────────────────────────────────── */
               <>
                 {step === 'draw' && (
-                  <DrawingCanvas word={scenario.word} referenceEmoji={refEmoji} onComplete={advance} />
+                  <DrawingCanvas word={scenario.word} referenceEmoji={refEmoji} onComplete={markAndAdvance} />
                 )}
                 {step === 'word' && (
-                  <WordCard scenario={scenario} onNext={advance} />
+                  <WordCard scenario={scenario} onNext={markAndAdvance} />
                 )}
                 {step === 'phrase' && (
-                  <PhraseCard scenario={scenario} onNext={advance} />
+                  <PhraseCard scenario={scenario} onNext={markAndAdvance} />
                 )}
                 {step === 'pattern' && (
-                  <PatternBuilder scenario={scenario} onNext={advance} />
+                  <PatternBuilder scenario={scenario} onNext={markAndAdvance} />
                 )}
                 {step === 'sentence' && (
-                  <SentenceCard scenario={scenario} onNext={advance} />
+                  <SentenceCard scenario={scenario} onNext={markAndAdvance} />
                 )}
                 {step === 'situation' && (
-                  <VideoDialogue scenario={scenario} onComplete={() => setFinished(true)} />
+                  <VideoDialogue scenario={scenario} onComplete={() => {
+                    setCompletedSteps(prev => new Set([...prev, STEPS.length - 1]))
+                    setFinished(true)
+                  }} />
                 )}
               </>
             )}

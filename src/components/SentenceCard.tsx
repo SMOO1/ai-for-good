@@ -35,7 +35,7 @@ export default function SentenceCard({ scenario, onNext }: SentenceCardProps) {
     setNoInputMsg(true)
   }, [])
 
-  const { recognitionState, interimTranscript, start, isSupported } = useSpeechRecognition({
+  const { recognitionState, interimTranscript, start, commitNow, isSupported } = useSpeechRecognition({
     targetText: scenario.sentenceAudio,
     focusWord: scenario.word,
     onResult: handleResult,
@@ -86,13 +86,28 @@ export default function SentenceCard({ scenario, onNext }: SentenceCardProps) {
             >
               {isSupported ? (
                 <>
-                  <MicrophoneButton state={recognitionState} onClick={start} />
+                  <div className="flex items-center gap-3">
+                    <MicrophoneButton state={recognitionState} onClick={start} />
+                    {recognitionState === 'listening' && (
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        onClick={commitNow}
+                        className="w-12 h-12 rounded-full bg-gray-800 text-white flex items-center justify-center text-xl shadow-lg active:scale-95 transition-transform"
+                        aria-label="Stop and evaluate"
+                      >
+                        ⏹
+                      </motion.button>
+                    )}
+                  </div>
                   {interimTranscript ? (
                     <p className="text-gray-400 text-sm italic text-center">"{interimTranscript}"</p>
                   ) : noInputMsg ? (
                     <p className="text-amber-600 text-sm font-medium text-center">
                       We didn't catch that — tap 🎤 and speak clearly
                     </p>
+                  ) : recognitionState === 'listening' ? (
+                    <p className="text-gray-400 text-sm text-center">Tap ⏹ to stop</p>
                   ) : (
                     <p className="text-gray-400 text-sm text-center">Tap the mic and say the sentence</p>
                   )}

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import AudioButton from './AudioButton'
 import SpeakAndCheck from './SpeakAndCheck'
-import { speak } from '@/lib/speak'
+import { speak, speakRohingya } from '@/lib/speak'
 import type { ScenarioModule } from '@/data/scenarios'
 import { VOCABULARY } from '@/data/vocabulary'
 
@@ -40,7 +40,7 @@ export default function WordCard({ scenario, onNext }: WordCardProps) {
       </div>
 
       {/* Audio controls */}
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-3 w-full">
         <AudioButton text={scenario.wordAudio} size="lg" label="Tap to hear" />
         <button
           onClick={() => speak(scenario.wordAudio, 0.85)}
@@ -48,6 +48,26 @@ export default function WordCard({ scenario, onNext }: WordCardProps) {
         >
           🔁 Repeat
         </button>
+
+        {/* Rohingya language section */}
+        <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex items-center justify-between gap-3 mt-1">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-amber-500 font-semibold uppercase tracking-widest mb-0.5">
+              Rohingya
+            </span>
+            <span className="text-xl font-bold text-gray-800">{scenario.wordRoh}</span>
+            <span className="text-sm text-gray-400" style={{ fontFamily: 'serif', direction: 'rtl' }}>
+              {scenario.wordArabic}
+            </span>
+          </div>
+          <button
+            onClick={() => speakRohingya(scenario.wordRoh)}
+            className="w-12 h-12 rounded-full bg-amber-400 text-white flex items-center justify-center text-xl shadow active:scale-95 transition-transform flex-shrink-0"
+            aria-label={`Play Rohingya: ${scenario.wordRoh}`}
+          >
+            🔊
+          </button>
+        </div>
       </div>
 
       {/* Speak check */}

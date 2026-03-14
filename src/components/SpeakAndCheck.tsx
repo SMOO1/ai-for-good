@@ -36,7 +36,7 @@ export default function SpeakAndCheck({
 
   const handleNoInput = useCallback(() => setNoInput(true), [])
 
-  const { recognitionState, interimTranscript, start, isSupported } = useSpeechRecognition({
+  const { recognitionState, interimTranscript, start, commitNow, isSupported } = useSpeechRecognition({
     targetText,
     focusWord,
     threshold,
@@ -63,12 +63,27 @@ export default function SpeakAndCheck({
             exit={{ opacity: 0 }}
             className="flex flex-col items-center gap-2"
           >
-            <MicrophoneButton state={recognitionState} onClick={start} />
+            <div className="flex items-center gap-3">
+              <MicrophoneButton state={recognitionState} onClick={start} />
+              {recognitionState === 'listening' && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  onClick={commitNow}
+                  className="w-12 h-12 rounded-full bg-gray-800 text-white flex items-center justify-center text-xl shadow-lg active:scale-95 transition-transform"
+                  aria-label="Stop and evaluate"
+                >
+                  ⏹
+                </motion.button>
+              )}
+            </div>
             <p className="text-xs text-gray-400 text-center">
               {interimTranscript
                 ? `"${interimTranscript}"`
                 : noInput
                 ? "Didn't catch that — try again"
+                : recognitionState === 'listening'
+                ? 'Tap ⏹ to stop'
                 : 'Tap 🎤 and say it'}
             </p>
           </motion.div>

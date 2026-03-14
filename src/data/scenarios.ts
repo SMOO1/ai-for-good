@@ -6,8 +6,13 @@ export interface ScenarioModule {
   vocabId: string
   word: string
   wordAudio: string
+  // Rohingya translation (romanized for TTS, arabic script for display)
+  wordRoh: string
+  wordArabic: string
   phrase: string
   phraseAudio: string
+  phraseRoh: string
+  phraseArabic: string
   pattern: string
   patternOptions: string[]
   sentence: string
@@ -28,8 +33,12 @@ export const SCENARIOS: ScenarioModule[] = [
     vocabId: 'doctor',
     word: 'doctor',
     wordAudio: 'doctor',
+    wordRoh: 'daktor',
+    wordArabic: 'دَکٹَر',
     phrase: 'need doctor',
     phraseAudio: 'need doctor',
+    phraseRoh: 'daktor lage',
+    phraseArabic: 'دَکٹَر لاگے',
     pattern: 'I need ___',
     patternOptions: ['doctor', 'water', 'help'],
     sentence: 'I need a doctor.',
@@ -48,8 +57,12 @@ export const SCENARIOS: ScenarioModule[] = [
     vocabId: 'bus',
     word: 'bus',
     wordAudio: 'bus',
+    wordRoh: 'baás',
+    wordArabic: 'باس',
     phrase: 'bus stop',
     phraseAudio: 'bus stop',
+    phraseRoh: 'baás esthicén',
+    phraseArabic: 'باس اِستِیسَن',
     pattern: 'Where is ___?',
     patternOptions: ['the bus stop', 'the school', 'the clinic'],
     sentence: 'Where is the bus stop?',
@@ -68,8 +81,12 @@ export const SCENARIOS: ScenarioModule[] = [
     vocabId: 'child',
     word: 'child',
     wordAudio: 'child',
+    wordRoh: 'fua',
+    wordArabic: 'فُوا',
     phrase: 'child sick',
     phraseAudio: 'child sick',
+    phraseRoh: 'fua biaram',
+    phraseArabic: 'فُوا بِیارام',
     pattern: 'My child is ___',
     patternOptions: ['sick', 'at school', 'ready'],
     sentence: 'My child is sick.',
@@ -88,8 +105,12 @@ export const SCENARIOS: ScenarioModule[] = [
     vocabId: 'food',
     word: 'food',
     wordAudio: 'food',
+    wordRoh: 'hána',
+    wordArabic: 'هانا',
     phrase: 'need food',
     phraseAudio: 'need food',
+    phraseRoh: 'hána lage',
+    phraseArabic: 'هانا لاگے',
     pattern: 'I need ___',
     patternOptions: ['food', 'water', 'a bag'],
     sentence: 'I need food.',
@@ -108,8 +129,12 @@ export const SCENARIOS: ScenarioModule[] = [
     vocabId: 'work',
     word: 'work',
     wordAudio: 'work',
+    wordRoh: 'ham',
+    wordArabic: 'هام',
     phrase: 'I work',
     phraseAudio: 'I work',
+    phraseRoh: 'mui ham gori',
+    phraseArabic: 'مُئی هام گَری',
     pattern: 'I work at ___',
     patternOptions: ['a store', 'a school', 'a clinic'],
     sentence: 'I work at a store.',
