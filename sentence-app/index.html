@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Say the Sentence – English Practice</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #020617;
+      --surface: #020617;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.15);
+      --danger: #ef4444;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --button: #1d4ed8;
+      --button-hover: #2563eb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #1d283a 0, #020617 50%, #000 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 840px;
+    }
+
+    .card {
+      border-radius: 28px;
+      padding: 22px 20px 18px;
+      background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 130%);
+      border: 1px solid rgba(15, 23, 42, 0.9);
+      box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(148, 163, 184, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 55%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.22), transparent 60%);
+      mix-blend-mode: screen;
+      opacity: 0.9;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 768px) {
+      .card-inner {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .title {
+      font-size: 1.4rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      border-radius: 999px;
+      padding: 2px 8px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      color: var(--muted);
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .score {
+      border-radius: 999px;
+      padding: 6px 14px;
+      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.2), transparent 70%);
+      border: 1px solid rgba(22, 163, 74, 0.5);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    .score-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(16, 185, 129, 0.18);
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      font-size: 0.75rem;
+    }
+
+    .left,
+    .right {
+      border-radius: 22px;
+      border: 1px solid rgba(15, 23, 42, 0.9);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), #020617 70%);
+      padding: 16px 16px 14px;
+      backdrop-filter: blur(8px);
+      position: relative;
+    }
+
+    .prompt-chip {
+      align-self: flex-start;
+      font-size: 0.8rem;
+      border-radius: 999px;
+      padding: 3px 10px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .prompt-chip span.dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: radial-gradient(circle at top, #22c55e, #16a34a);
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+    }
+
+    .sentence {
+      font-size: 1.4rem;
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+
+    .sentence-word {
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.6);
+    }
+
+    .help-text {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .btn {
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      border: 1px solid transparent;
+      background: rgba(15, 23, 42, 0.92);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease-out;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(to right, var(--button), #22c55e);
+      border-color: rgba(129, 140, 248, 0.9);
+      box-shadow:
+        0 0 0 1px rgba(129, 140, 248, 0.5),
+        0 12px 28px rgba(37, 99, 235, 0.6);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .btn-ghost {
+      border-color: rgba(15, 23, 42, 0.5);
+      background: rgba(15, 23, 42, 0.7);
+      color: var(--muted);
+    }
+
+    .btn-ghost:hover {
+      border-color: rgba(148, 163, 184, 0.7);
+      color: var(--text);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .btn-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.95);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+
+    .feedback {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      min-height: 22px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+    }
+
+    .pill-feedback {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pill-success {
+      background: var(--accent-soft);
+      color: #bbf7d0;
+      border: 1px solid rgba(34, 197, 94, 0.7);
+    }
+
+    .pill-error {
+      background: rgba(248, 113, 113, 0.16);
+      color: #fecaca;
+      border: 1px solid rgba(248, 113, 113, 0.8);
+    }
+
+    .transcript-box {
+      border-radius: 16px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      background: rgba(15, 23, 42, 0.9);
+      padding: 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      min-height: 56px;
+    }
+
+    .transcript-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .chip {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      color: var(--muted);
+      background: rgba(15, 23, 42, 0.85);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <div class="card">
+      <div class="card-inner">
+        <header class="header">
+          <div>
+            <div class="title">
+              Say the sentence
+              <span class="pill">Listen • Repeat • Check</span>
+            </div>
+            <div class="subtitle">
+              First they learned the word. Now they use it in a full sentence.
+            </div>
+          </div>
+          <div class="score">
+            <span class="score-badge" id="score-count">0</span>
+            <span id="score-text">Great sentences</span>
+          </div>
+        </header>
+
+        <section class="left">
+          <div class="prompt-chip">
+            <span class="dot"></span>
+            <span id="round-label">Sentence 1</span>
+          </div>
+
+          <div class="sentence" id="sentence-text">
+            This <span class="sentence-word">apple</span> is red.
+          </div>
+
+          <div class="help-text">
+            Listen first, then tap the microphone and say the same sentence.
+          </div>
+
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+            <button id="play-button" class="btn btn-ghost">
+              <span class="btn-icon">🔊</span>
+              Hear the sentence
+            </button>
+            <button id="mic-button" class="btn btn-primary">
+              <span class="btn-icon">🎤</span>
+              Say it now
+            </button>
+            <button id="next-button" class="btn btn-ghost" disabled>
+              <span class="btn-icon">➡</span>
+              Next sentence
+            </button>
+          </div>
+
+          <div class="feedback" id="feedback"></div>
+        </section>
+
+        <section class="right">
+          <div class="transcript-label">What you said</div>
+          <div class="transcript-box" id="transcript-box">
+            Tap the microphone and speak. We will show the words we heard.
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+
+</html>
+
