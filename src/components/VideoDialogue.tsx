@@ -19,8 +19,9 @@ export default function VideoDialogue({ scenario, onComplete }: VideoDialoguePro
   const promptVideoRef = useRef<HTMLVideoElement>(null)
   const answerVideoRef = useRef<HTMLVideoElement>(null)
 
-  const promptSrc = `/videos/${scenario.topic}-prompt.mp4`
-  const answerSrc = `/videos/${scenario.topic}-answer.mp4`
+  const ext = 'mov'
+  const promptSrc = `/videos/${scenario.topic}-prompt.${ext}`
+  const answerSrc = `/videos/${scenario.topic}-answer.${ext}`
 
   // ── Speech recognition ───────────────────────────────────────────────────
   const handleResult = useCallback(({ correct, transcript: t }: { correct: boolean; transcript: string }) => {
