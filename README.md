@@ -2,7 +2,7 @@
 
 **FLUE** is a visual and oral-first English language learning app designed for Rohingya learners. It teaches practical, survival-level English phrases through a multi-sensory, mobile-first experience that combines drawing, listening, speaking, and real-world video role-play — without requiring literacy in any language.
 
----
+--- 
 
 ## Table of Contents
 
